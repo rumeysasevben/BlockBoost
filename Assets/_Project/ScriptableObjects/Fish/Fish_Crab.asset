@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dde24e3ed440bb4fb6f998ed6b5c146, type: 3}
   m_Name: Fish_Crab
   m_EditorClassIdentifier: Assembly-CSharp::FishData
-  fishType: 0
+  fishType: 3
   displayName: "Pembe Bal\u0131k"
   sprite: {fileID: 4993462556592821871, guid: c2449acb932082b439b91ab5cb1328f9, type: 3}
   glowColor: {r: 1, g: 0.3830188, b: 0.5927316, a: 1}

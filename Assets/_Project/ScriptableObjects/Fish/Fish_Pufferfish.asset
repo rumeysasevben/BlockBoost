@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 9dde24e3ed440bb4fb6f998ed6b5c146, type: 3}
   m_Name: Fish_Pufferfish
   m_EditorClassIdentifier: Assembly-CSharp::FishData
-  fishType: 0
+  fishType: 2
   displayName: Balon
   sprite: {fileID: -2801025732108384145, guid: 0eaa3ee059a66744b97519066d5980ed, type: 3}
   glowColor: {r: 0.94509804, g: 0.76862746, b: 0.05882353, a: 1}

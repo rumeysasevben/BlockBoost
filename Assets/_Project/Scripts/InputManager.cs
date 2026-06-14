@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public class InputManager : MonoBehaviour
@@ -10,6 +11,7 @@ public class InputManager : MonoBehaviour
     private Fish selectedFish;
     private Vector2 startTouchWorldPos;
     private bool isDragging;
+    private bool isSwapping;
 
     private Camera mainCam;
 
@@ -31,13 +33,15 @@ public class InputManager : MonoBehaviour
 
     private void HandleInput()
     {
+        // Grid clear/gravity/refill VEYA swap animasyonu sürerken input alma
+        if (GridManager.Instance.IsBusy || isSwapping) return;
+
         // Mouse/Touch başlangıcı
         if (Input.GetMouseButtonDown(0))
         {
             Vector2 worldPos = mainCam.ScreenToWorldPoint(Input.mousePosition);
             startTouchWorldPos = worldPos;
 
-            // Tıklanan yerde balık var mı?
             RaycastHit2D hit = Physics2D.Raycast(worldPos, Vector2.zero);
             if (hit.collider != null)
             {
@@ -50,7 +54,7 @@ public class InputManager : MonoBehaviour
             }
         }
 
-        // Mouse/Touch bırakıldı veya sürüklenirken yön belirlendi
+        // Sürüklenirken yön belirlendiğinde swap dene
         if (isDragging && Input.GetMouseButton(0))
         {
             Vector2 currentWorldPos = mainCam.ScreenToWorldPoint(Input.mousePosition);
@@ -58,11 +62,9 @@ public class InputManager : MonoBehaviour
 
             if (delta.magnitude >= minSwipeDistance)
             {
-                // Hangi yön baskın?
                 Vector2Int direction = GetSwipeDirection(delta);
                 TrySwap(selectedFish, direction);
 
-                // Drag'ı bitir
                 isDragging = false;
                 selectedFish = null;
             }
@@ -78,15 +80,9 @@ public class InputManager : MonoBehaviour
     private Vector2Int GetSwipeDirection(Vector2 delta)
     {
         if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
-        {
-            // Yatay swipe
             return delta.x > 0 ? Vector2Int.right : Vector2Int.left;
-        }
         else
-        {
-            // Dikey swipe
             return delta.y > 0 ? Vector2Int.up : Vector2Int.down;
-        }
     }
 
     private void TrySwap(Fish fish, Vector2Int direction)
@@ -95,8 +91,31 @@ public class InputManager : MonoBehaviour
         int targetY = fish.gridY + direction.y;
 
         Fish targetFish = GridManager.Instance.GetFishAt(targetX, targetY);
-        if (targetFish == null) return; // Grid dışı
+        if (targetFish == null) return;
 
-        GridManager.Instance.SwapFish(fish, targetFish);
+        StartCoroutine(SwapRoutine(fish, targetFish));
+    }
+
+    private IEnumerator SwapRoutine(Fish a, Fish b)
+    {
+        isSwapping = true;
+
+        yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b));
+
+        bool hasMatch =
+            MatchFinder.Instance.HasMatchAt(a.gridX, a.gridY) ||
+            MatchFinder.Instance.HasMatchAt(b.gridX, b.gridY);
+
+        if (hasMatch)
+        {
+            yield return StartCoroutine(GridManager.Instance.ProcessMatches());
+        }
+        else
+        {
+            // Geçersiz swap — animasyonlu geri al
+            yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b));
+        }
+
+        isSwapping = false;
     }
 }

@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9dde24e3ed440bb4fb6f998ed6b5c146, type: 3}
+  m_Name: Fish_Crab
+  m_EditorClassIdentifier: Assembly-CSharp::FishData
+  fishType: 0
+  displayName: "Pembe Bal\u0131k"
+  sprite: {fileID: 4993462556592821871, guid: c2449acb932082b439b91ab5cb1328f9, type: 3}
+  glowColor: {r: 1, g: 0.3830188, b: 0.5927316, a: 1}
+  scoreValue: 10
+  spawnWeight: 1
+  matchSound: {fileID: 0}

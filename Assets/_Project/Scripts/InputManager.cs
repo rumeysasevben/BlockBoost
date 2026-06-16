@@ -36,6 +36,9 @@ public class InputManager : MonoBehaviour
         // Grid clear/gravity/refill VEYA swap animasyonu sürerken input alma
         if (GridManager.Instance.IsBusy || isSwapping) return;
 
+        // Level bittiyse de input alma
+        if (LevelManager.Instance != null && !LevelManager.Instance.IsLevelActive) return;
+
         // Mouse/Touch başlangıcı
         if (Input.GetMouseButtonDown(0))
         {
@@ -109,6 +112,7 @@ public class InputManager : MonoBehaviour
         if (hasMatch)
         {
             yield return StartCoroutine(GridManager.Instance.ProcessMatches());
+            LevelManager.Instance.UseMove();   // Sadece geçerli swap hamle harcar
         }
         else
         {

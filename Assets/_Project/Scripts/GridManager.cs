@@ -215,6 +215,7 @@ public class GridManager : MonoBehaviour
             {
                 if (f == null) continue;
                 totalScore += Mathf.RoundToInt(f.data.scoreValue * totalMultiplier);
+                LevelManager.Instance?.ReportFishCollected(f.data.fishType, 1);
                 grid[f.gridX, f.gridY] = null;
                 f.PopAndDestroy();
             }

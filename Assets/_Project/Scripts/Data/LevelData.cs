@@ -39,12 +39,18 @@ public class LevelData : ScriptableObject
     public List<RandomCollectibleSpec> randomCollectibles = new List<RandomCollectibleSpec>();
 
     [Header("Fishing Nets (Sabit)")]
-    [Tooltip("Sabit konumdaki balık ağları (üzerindeki balık swap edilemez)")]
     public List<NetPlacement> nets = new List<NetPlacement>();
 
     [Header("Fishing Nets (Random)")]
-    [Tooltip("Random konumda spawn olacak balık ağları")]
     public int randomNetCount = 0;
+
+    [Header("Boosters")]
+    [Tooltip("Bu level'da kullanılabilecek hammer sayısı")]
+    public int hammerCount = 1;
+    [Tooltip("Bu level'da kullanılabilecek shuffle sayısı")]
+    public int shuffleCount = 1;
+    [Tooltip("Bu level'da kullanılabilecek rocket sayısı")]
+    public int rocketCount = 1;
 
     [Header("Visual")]
     public Color backgroundTint = Color.white;

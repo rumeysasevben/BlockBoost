@@ -71,6 +71,8 @@ public class LevelManager : MonoBehaviour
         foreach (var g in CurrentLevel.collectGoals) g.Reset();
         ScoreManager.Instance.ResetScore();
 
+        BoosterManager.Instance?.InitializeForLevel(CurrentLevel);
+
         OnLevelLoaded?.Invoke(CurrentLevel);
         OnMovesChanged?.Invoke(MovesRemaining);
     }

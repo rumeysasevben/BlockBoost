@@ -14,6 +14,7 @@ public class GridManager : MonoBehaviour
     [Header("References")]
     public GameObject fishPrefab;
     public GameObject obstaclePrefab;
+    public GameObject collectiblePrefab;
     public FishData[] fishDataPool = new FishData[0];
 
     [Header("Layout")]
@@ -24,6 +25,7 @@ public class GridManager : MonoBehaviour
 
     private Fish[,] grid;
     private Dictionary<Vector2Int, Obstacle> obstacles = new Dictionary<Vector2Int, Obstacle>();
+    private Dictionary<Vector2Int, Collectible> collectibles = new Dictionary<Vector2Int, Collectible>();
 
     private void Awake()
     {
@@ -45,11 +47,7 @@ public class GridManager : MonoBehaviour
 
     private FishData GetRandomFishData()
     {
-        if (fishDataPool == null || fishDataPool.Length == 0)
-        {
-            Debug.LogError("[GridManager] fishDataPool is empty! Assign fish data in Inspector.");
-            return null;
-        }
+        if (fishDataPool == null || fishDataPool.Length == 0) return null;
         float totalWeight = 0f;
         foreach (var data in fishDataPool) totalWeight += data.spawnWeight;
         float roll = Random.Range(0f, totalWeight);
@@ -238,6 +236,7 @@ public class GridManager : MonoBehaviour
 
             yield return new WaitForSeconds(0.3f);
             yield return StartCoroutine(FillBoard());
+            yield return StartCoroutine(DeliverCollectiblesAtBottom());
 
             firstIteration = false;
         }
@@ -271,12 +270,15 @@ public class GridManager : MonoBehaviour
         {
             anyMoved = false;
 
+            // Vertical compact per column (fish AND collectibles)
             for (int x = 0; x < width; x++)
             {
                 int writeY = 0;
                 for (int y = 0; y < height; y++)
                 {
                     if (IsCellBlocked(x, y)) { writeY = y + 1; continue; }
+
+                    // Fish
                     if (grid[x, y] != null)
                     {
                         if (y != writeY)
@@ -290,25 +292,41 @@ public class GridManager : MonoBehaviour
                         }
                         writeY++;
                     }
+                    // Collectible
+                    else if (HasCollectibleAt(x, y))
+                    {
+                        if (y != writeY)
+                        {
+                            Collectible c = collectibles[new Vector2Int(x, y)];
+                            collectibles.Remove(new Vector2Int(x, y));
+                            collectibles[new Vector2Int(x, writeY)] = c;
+                            c.SetGridPosition(x, writeY);
+                            c.MoveTo(GridToWorldPosition(x, writeY), fallDuration);
+                            anyMoved = true;
+                        }
+                        writeY++;
+                    }
                 }
             }
 
+            // Diagonal pull (sadece balıklar için, collectible diagonal kaymaz)
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
                 {
                     if (IsCellBlocked(x, y)) continue;
                     if (grid[x, y] != null) continue;
+                    if (HasCollectibleAt(x, y)) continue;
 
                     bool canVerticalFill = false;
-                    bool obstacleAbove = false;
+                    bool obstructed = false;
                     for (int up = y + 1; up < height; up++)
                     {
-                        if (IsCellBlocked(x, up)) { obstacleAbove = true; break; }
+                        if (IsCellBlocked(x, up) || HasCollectibleAt(x, up)) { obstructed = true; break; }
                         if (grid[x, up] != null) { canVerticalFill = true; break; }
                     }
                     if (canVerticalFill) continue;
-                    if (!obstacleAbove) continue;
+                    if (!obstructed) continue;
 
                     int firstDir = Random.value < 0.5f ? -1 : 1;
                     int[] dirs = { firstDir, -firstDir };
@@ -318,6 +336,7 @@ public class GridManager : MonoBehaviour
                         int srcY = y + 1;
                         if (srcX < 0 || srcX >= width || srcY >= height) continue;
                         if (IsCellBlocked(srcX, srcY)) continue;
+                        if (HasCollectibleAt(srcX, srcY)) continue;
                         if (grid[srcX, srcY] == null) continue;
 
                         Fish puller = grid[srcX, srcY];
@@ -347,12 +366,13 @@ public class GridManager : MonoBehaviour
             for (int y = 0; y < height; y++)
             {
                 if (IsCellBlocked(x, y)) continue;
+                if (HasCollectibleAt(x, y)) continue;
                 if (grid[x, y] != null) continue;
 
-                bool hasObstacleAbove = false;
+                bool blockedAbove = false;
                 for (int oy = y + 1; oy < height; oy++)
-                    if (IsCellBlocked(x, oy)) { hasObstacleAbove = true; break; }
-                if (hasObstacleAbove) continue;
+                    if (IsCellBlocked(x, oy) || HasCollectibleAt(x, oy)) { blockedAbove = true; break; }
+                if (blockedAbove) continue;
 
                 Vector3 spawnPos = GridToWorldPosition(x, height + spawnOffset);
                 Vector3 targetPos = GridToWorldPosition(x, y);
@@ -368,6 +388,37 @@ public class GridManager : MonoBehaviour
             }
         }
         return spawnedTotal;
+    }
+
+    /// <summary>
+    /// y=0 sırasındaki collectible'ları teslim et.
+    /// </summary>
+    private IEnumerator DeliverCollectiblesAtBottom()
+    {
+        bool anyDelivered = false;
+        List<Vector2Int> toDeliver = new List<Vector2Int>();
+        for (int x = 0; x < width; x++)
+        {
+            Vector2Int key = new Vector2Int(x, 0);
+            if (collectibles.ContainsKey(key))
+                toDeliver.Add(key);
+        }
+
+        foreach (var key in toDeliver)
+        {
+            Collectible c = collectibles[key];
+            collectibles.Remove(key);
+            LevelManager.Instance?.ReportCollectibleDelivered(c.type, 1);
+            c.DeliverAndDestroy();
+            anyDelivered = true;
+            Debug.Log($"<color=lime>📦 Collectible delivered: {c.type} from x={key.x}</color>");
+        }
+
+        if (anyDelivered)
+        {
+            yield return new WaitForSeconds(0.5f);
+            yield return StartCoroutine(FillBoard());  // boşalan hücreleri doldur
+        }
     }
 
     private List<Fish> GetActivationArea(Fish special)
@@ -457,11 +508,7 @@ public class GridManager : MonoBehaviour
                     if (!counts.ContainsKey(f.data.fishType)) counts[f.data.fishType] = 0;
                     counts[f.data.fishType]++;
                 }
-            if (counts.Count == 0)
-            {
-                IsBusy = false;
-                yield break;
-            }
+            if (counts.Count == 0) { IsBusy = false; yield break; }
             FishType target = FishType.Clownfish;
             int max = 0;
             foreach (var kvp in counts)
@@ -526,6 +573,7 @@ public class GridManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.4f);
         yield return StartCoroutine(FillBoard());
+        yield return StartCoroutine(DeliverCollectiblesAtBottom());
         yield return StartCoroutine(ProcessMatches());
 
         IsBusy = false;
@@ -547,11 +595,7 @@ public class GridManager : MonoBehaviour
                     hasTarget = true;
                 }
             }
-        if (!hasTarget)
-        {
-            IsBusy = false;
-            yield break;
-        }
+        if (!hasTarget) { IsBusy = false; yield break; }
 
         Queue<Fish> queue = new Queue<Fish>(toClear);
         HashSet<Fish> expanded = new HashSet<Fish>();
@@ -584,6 +628,7 @@ public class GridManager : MonoBehaviour
 
         yield return new WaitForSeconds(0.3f);
         yield return StartCoroutine(FillBoard());
+        yield return StartCoroutine(DeliverCollectiblesAtBottom());
         yield return StartCoroutine(ProcessMatches());
 
         IsBusy = false;
@@ -661,6 +706,7 @@ public class GridManager : MonoBehaviour
     {
         ClearGrid();
         ClearObstacles();
+        ClearCollectibles();
 
         width = level.gridWidth;
         height = level.gridHeight;
@@ -675,12 +721,15 @@ public class GridManager : MonoBehaviour
         SpawnObstacles(level.obstacles);
         SpawnRandomObstacles(level.randomObstacles);
 
+        SpawnCollectibles(level.collectibles);
+        SpawnRandomCollectibles(level.randomCollectibles);
+
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
-                if (!IsCellBlocked(x, y))
+                if (!IsCellBlocked(x, y) && !HasCollectibleAt(x, y))
                     SpawnFishAt(x, y);
 
-        Debug.Log($"<color=cyan>[Grid] {level.levelName}: {width}x{height}, {obstacles.Count} obstacles</color>");
+        Debug.Log($"<color=cyan>[Grid] {level.levelName}: {width}x{height}, {obstacles.Count} obstacles, {collectibles.Count} collectibles</color>");
     }
 
     private void ClearGrid()
@@ -717,7 +766,6 @@ public class GridManager : MonoBehaviour
     private void SpawnRandomObstacles(List<RandomObstacleSpec> specs)
     {
         if (specs == null || obstaclePrefab == null) return;
-
         List<Vector2Int> candidates = new List<Vector2Int>();
         for (int x = 0; x < width; x++)
             for (int y = 1; y < height; y++)
@@ -726,7 +774,6 @@ public class GridManager : MonoBehaviour
                 if (!obstacles.ContainsKey(pos))
                     candidates.Add(pos);
             }
-
         foreach (var spec in specs)
         {
             for (int i = 0; i < spec.count; i++)
@@ -769,16 +816,11 @@ public class GridManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Verilen pozisyonların 4 komşusundaki obstacle'lara birer hasar verir.
-    /// Bir obstacle bir çağrıda en fazla 1 hasar alır (dedupe).
-    /// </summary>
     private void DamageAdjacentObstacles(IEnumerable<Vector2Int> clearedPositions)
     {
         HashSet<Vector2Int> toDamage = new HashSet<Vector2Int>();
         int[] dx = { 0, 0, -1, 1 };
         int[] dy = { 1, -1, 0, 0 };
-
         foreach (var pos in clearedPositions)
         {
             for (int i = 0; i < 4; i++)
@@ -790,5 +832,78 @@ public class GridManager : MonoBehaviour
             }
         }
         foreach (var p in toDamage) DamageObstacleAt(p.x, p.y);
+    }
+
+    // ─── COLLECTIBLES ─────────────────────────
+
+    public bool HasCollectibleAt(int x, int y)
+    {
+        return collectibles.ContainsKey(new Vector2Int(x, y));
+    }
+
+    private void SpawnCollectibles(List<CollectiblePlacement> placements)
+    {
+        if (placements == null || collectiblePrefab == null) return;
+        foreach (var p in placements)
+        {
+            if (p.gridX < 0 || p.gridX >= width || p.gridY < 0 || p.gridY >= height) continue;
+            Vector2Int pos = new Vector2Int(p.gridX, p.gridY);
+            if (obstacles.ContainsKey(pos) || collectibles.ContainsKey(pos)) continue;
+            SpawnSingleCollectible(p.gridX, p.gridY, p.type);
+        }
+    }
+
+    private void SpawnRandomCollectibles(List<RandomCollectibleSpec> specs)
+    {
+        if (specs == null || collectiblePrefab == null) return;
+
+        // Aday hücreler: üst yarı (collectible'lar yukarıdan başlamalı ki düşmesi anlamlı olsun)
+        int minY = Mathf.Max(2, height / 2);
+        List<Vector2Int> candidates = new List<Vector2Int>();
+        for (int x = 0; x < width; x++)
+            for (int y = minY; y < height; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+                if (obstacles.ContainsKey(pos) || collectibles.ContainsKey(pos)) continue;
+                candidates.Add(pos);
+            }
+
+        foreach (var spec in specs)
+        {
+            for (int i = 0; i < spec.count; i++)
+            {
+                if (candidates.Count == 0) return;
+                int idx = Random.Range(0, candidates.Count);
+                Vector2Int pos = candidates[idx];
+                candidates.RemoveAt(idx);
+                SpawnSingleCollectible(pos.x, pos.y, spec.type);
+            }
+        }
+    }
+
+    private void SpawnSingleCollectible(int x, int y, CollectibleType type)
+    {
+        if (collectiblePrefab == null)
+        {
+            Debug.LogError("[GridManager] collectiblePrefab is not assigned!");
+            return;
+        }
+        Vector3 worldPos = GridToWorldPosition(x, y);
+        GameObject obj = Instantiate(collectiblePrefab, worldPos, Quaternion.identity, gridParent);
+        Collectible c = obj.GetComponent<Collectible>();
+        if (c == null)
+        {
+            Debug.LogError("[GridManager] collectiblePrefab has no Collectible component!");
+            return;
+        }
+        c.Initialize(type, x, y);
+        collectibles[new Vector2Int(x, y)] = c;
+    }
+
+    private void ClearCollectibles()
+    {
+        foreach (var kvp in collectibles)
+            if (kvp.Value != null) Destroy(kvp.Value.gameObject);
+        collectibles.Clear();
     }
 }

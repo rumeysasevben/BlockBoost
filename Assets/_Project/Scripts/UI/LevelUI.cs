@@ -50,15 +50,9 @@ public class LevelUI : MonoBehaviour
         if (movesText) movesText.text = $"Moves: {movesRemaining}";
     }
 
-    private void OnGoalProgress(LevelGoal goal)
-    {
-        RefreshGoalDisplay();
-    }
+    private void OnGoalProgress(LevelGoal goal) => RefreshGoalDisplay();
 
-    private void OnScoreChanged(int score)
-    {
-        RefreshStars(score);
-    }
+    private void OnScoreChanged(int score) => RefreshStars(score);
 
     private void RefreshGoalDisplay()
     {
@@ -75,9 +69,14 @@ public class LevelUI : MonoBehaviour
         for (int i = 0; i < level.collectGoals.Count; i++)
         {
             var g = level.collectGoals[i];
-            string label = g.goalType == GoalType.CollectFish
-                ? g.targetFish.ToString()
-                : g.targetObstacle.ToString();
+            string label;
+            switch (g.goalType)
+            {
+                case GoalType.CollectFish:        label = g.targetFish.ToString(); break;
+                case GoalType.ClearObstacle:      label = g.targetObstacle.ToString(); break;
+                case GoalType.DeliverCollectible: label = g.targetCollectible.ToString(); break;
+                default: label = "?"; break;
+            }
             string status = g.IsComplete ? "<color=#33FF66>OK</color>" : $"{g.currentCount}/{g.targetCount}";
             sb.Append($"{label}: {status}");
             if (i < level.collectGoals.Count - 1) sb.Append("   ");
@@ -96,8 +95,6 @@ public class LevelUI : MonoBehaviour
         else if (score >= level.targetScore) stars = 1;
 
         for (int i = 0; i < hudStars.Length; i++)
-        {
             hudStars[i].sprite = (i < stars) ? starFilled : starEmpty;
-        }
     }
 }

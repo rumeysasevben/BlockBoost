@@ -47,7 +47,14 @@ public class LevelManager : MonoBehaviour
     private void LogLost()       => Debug.Log("<color=red>[Level] LOST!</color>");
     private void LogGoal(LevelGoal g)
     {
-        string label = g.goalType == GoalType.CollectFish ? g.targetFish.ToString() : g.targetObstacle.ToString();
+        string label;
+        switch (g.goalType)
+        {
+            case GoalType.CollectFish:        label = g.targetFish.ToString(); break;
+            case GoalType.ClearObstacle:      label = g.targetObstacle.ToString(); break;
+            case GoalType.DeliverCollectible: label = g.targetCollectible.ToString(); break;
+            default: label = "?"; break;
+        }
         Debug.Log($"[Goal] {label}: {g.currentCount}/{g.targetCount}");
     }
 
@@ -70,25 +77,19 @@ public class LevelManager : MonoBehaviour
 
         OnLevelLoaded?.Invoke(CurrentLevel);
         OnMovesChanged?.Invoke(MovesRemaining);
-
-        Debug.Log($"<color=cyan>▶ {CurrentLevel.levelName} başladı | {CurrentLevel.moveLimit} hamle | Hedef: {CurrentLevel.targetScore}</color>");
     }
 
     public void UseMove()
     {
         if (!IsLevelActive) return;
-
         MovesRemaining--;
         OnMovesChanged?.Invoke(MovesRemaining);
-
-        if (MovesRemaining <= 0)
-            EndLevel();
+        if (MovesRemaining <= 0) EndLevel();
     }
 
     public void ReportFishCollected(FishType fish, int amount = 1)
     {
         if (!IsLevelActive || CurrentLevel == null) return;
-
         foreach (var g in CurrentLevel.collectGoals)
         {
             if (g.goalType == GoalType.CollectFish && g.targetFish == fish && !g.IsComplete)
@@ -97,15 +98,12 @@ public class LevelManager : MonoBehaviour
                 OnGoalProgress?.Invoke(g);
             }
         }
-
-        if (AllGoalsComplete())
-            EndLevel();
+        if (AllGoalsComplete()) EndLevel();
     }
 
     public void ReportObstacleCleared(ObstacleType obstacle, int amount = 1)
     {
         if (!IsLevelActive || CurrentLevel == null) return;
-
         foreach (var g in CurrentLevel.collectGoals)
         {
             if (g.goalType == GoalType.ClearObstacle && g.targetObstacle == obstacle && !g.IsComplete)
@@ -114,17 +112,27 @@ public class LevelManager : MonoBehaviour
                 OnGoalProgress?.Invoke(g);
             }
         }
+        if (AllGoalsComplete()) EndLevel();
+    }
 
-        if (AllGoalsComplete())
-            EndLevel();
+    public void ReportCollectibleDelivered(CollectibleType collectible, int amount = 1)
+    {
+        if (!IsLevelActive || CurrentLevel == null) return;
+        foreach (var g in CurrentLevel.collectGoals)
+        {
+            if (g.goalType == GoalType.DeliverCollectible && g.targetCollectible == collectible && !g.IsComplete)
+            {
+                g.AddProgress(amount);
+                OnGoalProgress?.Invoke(g);
+            }
+        }
+        if (AllGoalsComplete()) EndLevel();
     }
 
     private bool AllGoalsComplete()
     {
         if (CurrentLevel == null) return false;
-        if (CurrentLevel.collectGoals == null || CurrentLevel.collectGoals.Count == 0)
-            return false;
-
+        if (CurrentLevel.collectGoals == null || CurrentLevel.collectGoals.Count == 0) return false;
         foreach (var g in CurrentLevel.collectGoals)
             if (!g.IsComplete) return false;
         return true;
@@ -134,21 +142,16 @@ public class LevelManager : MonoBehaviour
     {
         IsLevelActive = false;
         int score = ScoreManager.Instance.CurrentScore;
-
         bool goalsDone = AllGoalsComplete();
 
         if (goalsDone)
         {
             int stars = CalculateStars(score);
-            Debug.Log($"<color=lime>✓ LEVEL TAMAMLANDI! Skor: {score} | {stars} yıldız</color>");
-
             SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
-
             OnLevelWon?.Invoke(stars);
         }
         else
         {
-            Debug.Log($"<color=red>✗ HAMLE BİTTİ. Goal tamamlanmadı. Skor: {score}</color>");
             OnLevelLost?.Invoke();
         }
     }
@@ -164,10 +167,7 @@ public class LevelManager : MonoBehaviour
     public void LoadNextLevel()
     {
         int currentIndex = Array.IndexOf(allLevels, CurrentLevel);
-        if (currentIndex + 1 < allLevels.Length)
-            LoadLevel(currentIndex + 1);
-        else
-            Debug.Log("<color=yellow>Tüm leveller bitti! 🎉</color>");
+        if (currentIndex + 1 < allLevels.Length) LoadLevel(currentIndex + 1);
     }
 
     public void RestartLevel()

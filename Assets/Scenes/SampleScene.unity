@@ -629,6 +629,7 @@ MonoBehaviour:
   cellSize: 0.7
   fishPrefab: {fileID: 2837368342211570078, guid: f99a3adef06498f4d90c779f1f7c0738, type: 3}
   obstaclePrefab: {fileID: 637049863730648273, guid: 78a66e87dfcb9a54d887abbea884f91d, type: 3}
+  collectiblePrefab: {fileID: 3095086457210460919, guid: 919cf01b6d59000459addfa938493465, type: 3}
   fishDataPool:
   - {fileID: 11400000, guid: 7e253c60dd14d014ca14e9d04925b679, type: 2}
   - {fileID: 11400000, guid: f5f0d7116dfab564ba742cb68fd4fc9e, type: 2}

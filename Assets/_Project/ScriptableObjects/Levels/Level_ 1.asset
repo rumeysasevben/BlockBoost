@@ -28,15 +28,27 @@ MonoBehaviour:
   - goalType: 0
     targetFish: 0
     targetObstacle: 0
+    targetCollectible: 0
     targetCount: 15
     currentCount: 15
   - goalType: 1
     targetFish: 0
     targetObstacle: 0
+    targetCollectible: 0
+    targetCount: 2
+    currentCount: 15
+  - goalType: 2
+    targetFish: 0
+    targetObstacle: 0
+    targetCollectible: 0
     targetCount: 2
     currentCount: 15
   obstacles: []
   randomObstacles:
+  - type: 0
+    count: 2
+  collectibles: []
+  randomCollectibles:
   - type: 0
     count: 2
   backgroundTint: {r: 1, g: 1, b: 1, a: 1}

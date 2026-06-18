@@ -56,6 +56,7 @@ public class LevelManager : MonoBehaviour
         }
 
         CurrentLevel = allLevels[index];
+        GridManager.Instance?.ResetForLevel(CurrentLevel);
         MovesRemaining = CurrentLevel.moveLimit;
         IsLevelActive = true;
 

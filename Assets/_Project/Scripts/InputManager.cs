@@ -98,25 +98,52 @@ public class InputManager : MonoBehaviour
 
         StartCoroutine(SwapRoutine(fish, targetFish));
     }
-
+    
     private IEnumerator SwapRoutine(Fish a, Fish b)
     {
         isSwapping = true;
 
         yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b));
 
+        // ─── SPECIAL COMBO ───
+        // İki special swap'lendi → büyük combo
+        if (a.IsSpecial && b.IsSpecial)
+        {
+            yield return StartCoroutine(GridManager.Instance.HandleSpecialCombo(a, b));
+            LevelManager.Instance.UseMove();
+            isSwapping = false;
+            yield break;
+        }
+
+        // ColorBomb + normal balık → o rengin hepsini temizle
+        if (a.specialType == SpecialType.ColorBomb && !b.IsSpecial)
+        {
+            yield return StartCoroutine(GridManager.Instance.ActivateColorBombOnType(a, b.data.fishType));
+            LevelManager.Instance.UseMove();
+            isSwapping = false;
+            yield break;
+        }
+        if (b.specialType == SpecialType.ColorBomb && !a.IsSpecial)
+        {
+            yield return StartCoroutine(GridManager.Instance.ActivateColorBombOnType(b, a.data.fishType));
+            LevelManager.Instance.UseMove();
+            isSwapping = false;
+            yield break;
+        }
+
+        // ─── NORMAL MATCH ───
         bool hasMatch =
             MatchFinder.Instance.HasMatchAt(a.gridX, a.gridY) ||
             MatchFinder.Instance.HasMatchAt(b.gridX, b.gridY);
 
         if (hasMatch)
         {
-            yield return StartCoroutine(GridManager.Instance.ProcessMatches());
-            LevelManager.Instance.UseMove();   // Sadece geçerli swap hamle harcar
+            yield return StartCoroutine(GridManager.Instance.ProcessMatches(a, b));
+            LevelManager.Instance.UseMove();
         }
         else
         {
-            // Geçersiz swap — animasyonlu geri al
+            // Geçersiz swap — geri al
             yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b));
         }
 

@@ -13,16 +13,16 @@ public class MatchFinder : MonoBehaviour
 
     /// <summary>
     /// Tüm grid'i tarar, 3+ aynı tip yatay/dikey eşleşmeleri bulur.
-    /// Aynı balık birden fazla match'te olabilir (T/L şekiller) — HashSet ile dedupe edilir.
+    /// Her run ayrı bir MatchGroup olarak döner.
     /// </summary>
-    public HashSet<Fish> FindAllMatches()
+    public List<MatchGroup> FindAllMatchGroups()
     {
-        HashSet<Fish> matched = new HashSet<Fish>();
+        List<MatchGroup> groups = new List<MatchGroup>();
         GridManager gm = GridManager.Instance;
         int w = gm.width;
         int h = gm.height;
 
-        // YATAY tarama
+        // YATAY
         for (int y = 0; y < h; y++)
         {
             int runStart = 0;
@@ -34,15 +34,17 @@ public class MatchFinder : MonoBehaviour
                     int runLength = x - runStart;
                     if (runLength >= 3)
                     {
+                        MatchGroup g = new MatchGroup { isHorizontal = true };
                         for (int i = runStart; i < x; i++)
-                            matched.Add(gm.GetFishAt(i, y));
+                            g.fish.Add(gm.GetFishAt(i, y));
+                        groups.Add(g);
                     }
                     runStart = x;
                 }
             }
         }
 
-        // DİKEY tarama
+        // DİKEY
         for (int x = 0; x < w; x++)
         {
             int runStart = 0;
@@ -54,20 +56,34 @@ public class MatchFinder : MonoBehaviour
                     int runLength = y - runStart;
                     if (runLength >= 3)
                     {
+                        MatchGroup g = new MatchGroup { isHorizontal = false };
                         for (int i = runStart; i < y; i++)
-                            matched.Add(gm.GetFishAt(x, i));
+                            g.fish.Add(gm.GetFishAt(x, i));
+                        groups.Add(g);
                     }
                     runStart = y;
                 }
             }
         }
 
-        return matched;
+        return groups;
     }
 
     /// <summary>
-    /// Belirli bir balığın bulunduğu konumdaki match'i kontrol eder (swap sonrası lokal kontrol için).
-    /// Tüm grid taramasından daha hızlı.
+    /// Eski API ile uyumluluk için: tüm match'leri tek HashSet olarak verir.
+    /// GridManager refactor edilene kadar var.
+    /// </summary>
+    public HashSet<Fish> FindAllMatches()
+    {
+        HashSet<Fish> all = new HashSet<Fish>();
+        foreach (var g in FindAllMatchGroups())
+            foreach (var f in g.fish)
+                all.Add(f);
+        return all;
+    }
+
+    /// <summary>
+    /// Belirli bir konumda match var mı? (Swap geçerliliği için lokal kontrol.)
     /// </summary>
     public bool HasMatchAt(int x, int y)
     {
@@ -75,7 +91,7 @@ public class MatchFinder : MonoBehaviour
         Fish center = gm.GetFishAt(x, y);
         if (center == null) return false;
 
-        // Yatay: sol + sağ doğrultusunda aynı tip kaç tane?
+        // Yatay
         int hCount = 1;
         for (int i = x - 1; i >= 0 && SameType(gm.GetFishAt(i, y), center); i--) hCount++;
         for (int i = x + 1; i < gm.width && SameType(gm.GetFishAt(i, y), center); i++) hCount++;
@@ -91,6 +107,7 @@ public class MatchFinder : MonoBehaviour
     private bool SameType(Fish a, Fish b)
     {
         if (a == null || b == null) return false;
+        if (a.data == null || b.data == null) return false;
         return a.data.fishType == b.data.fishType;
     }
 }

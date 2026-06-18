@@ -16,8 +16,17 @@ public class LevelData : ScriptableObject
     public int twoStarScore = 2000;
     public int threeStarScore = 3500;
 
+    [Header("Grid")]
+    [Tooltip("Bu level için grid genişliği")]
+    public int gridWidth = 8;
+    [Tooltip("Bu level için grid yüksekliği")]
+    public int gridHeight = 8;
+
+    [Header("Fish Pool")]
+    [Tooltip("Bu level'da kullanılacak balıklar. Boşsa GridManager'ın default pool'u kullanılır.")]
+    public FishData[] levelFishPool;
+
     [Header("Goals")]
-    [Tooltip("Bu level'da toplanması gereken balıklar")]
     public List<LevelGoal> collectGoals = new List<LevelGoal>();
 
     [Header("Visual (opsiyonel, sonra)")]

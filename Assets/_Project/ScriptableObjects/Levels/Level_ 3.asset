@@ -18,6 +18,14 @@ MonoBehaviour:
   targetScore: 2000
   twoStarScore: 4000
   threeStarScore: 7000
+  gridWidth: 7
+  gridHeight: 7
+  levelFishPool:
+  - {fileID: 11400000, guid: 7e253c60dd14d014ca14e9d04925b679, type: 2}
+  - {fileID: 11400000, guid: f5f0d7116dfab564ba742cb68fd4fc9e, type: 2}
+  - {fileID: 11400000, guid: e7f645ecf4cc71e47a76862206b2689a, type: 2}
+  - {fileID: 11400000, guid: 1bfb24478fe7a4244b2f63258c50492b, type: 2}
+  - {fileID: 11400000, guid: 734bced906c79314e98efbbe54a96cb0, type: 2}
   collectGoals:
   - targetFish: 2
     targetCount: 20

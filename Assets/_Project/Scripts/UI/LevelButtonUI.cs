@@ -44,6 +44,8 @@ public class LevelButtonUI : MonoBehaviour
         // Kilitli olanları soldurabiliriz (opsiyonel)
         var img = GetComponent<Image>();
         if (img != null)
-            img.color = unlocked ? Color.white : new Color(0.5f, 0.5f, 0.5f, 1f);
+            img.color = unlocked
+            ?new Color(0.25f, 0.66f, 0.85f)   // Parlak mavi
+            : new Color(0.32f, 0.40f, 0.50f);
     }
 }

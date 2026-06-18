@@ -30,6 +30,11 @@ MonoBehaviour:
     targetObstacle: 0
     targetCount: 15
     currentCount: 15
+  - goalType: 1
+    targetFish: 0
+    targetObstacle: 0
+    targetCount: 2
+    currentCount: 15
   obstacles: []
   randomObstacles:
   - type: 0

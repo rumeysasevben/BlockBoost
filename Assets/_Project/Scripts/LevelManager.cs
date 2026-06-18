@@ -45,7 +45,11 @@ public class LevelManager : MonoBehaviour
     private void LogMoves(int m) => Debug.Log($"[Level] Moves: {m}");
     private void LogWon(int s)   => Debug.Log($"<color=lime>[Level] WON! Stars: {s}</color>");
     private void LogLost()       => Debug.Log("<color=red>[Level] LOST!</color>");
-    private void LogGoal(LevelGoal g) => Debug.Log($"[Goal] {g.targetFish}: {g.currentCount}/{g.targetCount}");
+    private void LogGoal(LevelGoal g)
+    {
+        string label = g.goalType == GoalType.CollectFish ? g.targetFish.ToString() : g.targetObstacle.ToString();
+        Debug.Log($"[Goal] {label}: {g.currentCount}/{g.targetCount}");
+    }
 
     public void LoadLevel(int index)
     {

@@ -10,7 +10,7 @@ public class LevelUI : MonoBehaviour
     [SerializeField] private TMP_Text goalText;
 
     [Header("HUD Stars (mini)")]
-    [SerializeField] private Image[] hudStars;     // 3 mini Image
+    [SerializeField] private Image[] hudStars;
     [SerializeField] private Sprite starFilled;
     [SerializeField] private Sprite starEmpty;
 
@@ -75,8 +75,11 @@ public class LevelUI : MonoBehaviour
         for (int i = 0; i < level.collectGoals.Count; i++)
         {
             var g = level.collectGoals[i];
+            string label = g.goalType == GoalType.CollectFish
+                ? g.targetFish.ToString()
+                : g.targetObstacle.ToString();
             string status = g.IsComplete ? "<color=#33FF66>OK</color>" : $"{g.currentCount}/{g.targetCount}";
-            sb.Append($"{g.targetFish}: {status}");
+            sb.Append($"{label}: {status}");
             if (i < level.collectGoals.Count - 1) sb.Append("   ");
         }
         goalText.text = sb.ToString();

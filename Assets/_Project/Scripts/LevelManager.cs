@@ -14,7 +14,6 @@ public class LevelManager : MonoBehaviour
     public int MovesRemaining { get; private set; }
     public bool IsLevelActive { get; private set; }
 
-    // Events
     public event Action<LevelData> OnLevelLoaded;
     public event Action<int> OnMovesChanged;
     public event Action<LevelGoal> OnGoalProgress;
@@ -47,6 +46,7 @@ public class LevelManager : MonoBehaviour
     private void LogWon(int s)   => Debug.Log($"<color=lime>[Level] WON! Stars: {s}</color>");
     private void LogLost()       => Debug.Log("<color=red>[Level] LOST!</color>");
     private void LogGoal(LevelGoal g) => Debug.Log($"[Goal] {g.targetFish}: {g.currentCount}/{g.targetCount}");
+
     public void LoadLevel(int index)
     {
         if (index < 0 || index >= allLevels.Length)
@@ -87,7 +87,24 @@ public class LevelManager : MonoBehaviour
 
         foreach (var g in CurrentLevel.collectGoals)
         {
-            if (g.targetFish == fish && !g.IsComplete)
+            if (g.goalType == GoalType.CollectFish && g.targetFish == fish && !g.IsComplete)
+            {
+                g.AddProgress(amount);
+                OnGoalProgress?.Invoke(g);
+            }
+        }
+
+        if (AllGoalsComplete())
+            EndLevel();
+    }
+
+    public void ReportObstacleCleared(ObstacleType obstacle, int amount = 1)
+    {
+        if (!IsLevelActive || CurrentLevel == null) return;
+
+        foreach (var g in CurrentLevel.collectGoals)
+        {
+            if (g.goalType == GoalType.ClearObstacle && g.targetObstacle == obstacle && !g.IsComplete)
             {
                 g.AddProgress(amount);
                 OnGoalProgress?.Invoke(g);
@@ -121,7 +138,6 @@ public class LevelManager : MonoBehaviour
             int stars = CalculateStars(score);
             Debug.Log($"<color=lime>✓ LEVEL TAMAMLANDI! Skor: {score} | {stars} yıldız</color>");
 
-            // YENİ: Save
             SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
 
             OnLevelWon?.Invoke(stars);

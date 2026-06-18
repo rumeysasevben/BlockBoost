@@ -24,11 +24,35 @@ public class LevelData : ScriptableObject
 
     [Header("Fish Pool")]
     [Tooltip("Bu level'da kullanılacak balıklar. Boşsa GridManager'ın default pool'u kullanılır.")]
-    public FishData[] levelFishPool;
+    public FishData[] levelFishPool = new FishData[0];
 
     [Header("Goals")]
     public List<LevelGoal> collectGoals = new List<LevelGoal>();
 
-    [Header("Visual (opsiyonel, sonra)")]
+    [Header("Obstacles (Sabit Konum)")]
+    [Tooltip("Bu level'da grid'e yerleştirilecek sabit konumlu engeller")]
+    public List<ObstaclePlacement> obstacles = new List<ObstaclePlacement>();
+
+    [Header("Obstacles (Random)")]
+    [Tooltip("Random pozisyonlara eklenecek obstacle'lar (tip + adet)")]
+    public List<RandomObstacleSpec> randomObstacles = new List<RandomObstacleSpec>();
+
+    [Header("Visual")]
     public Color backgroundTint = Color.white;
+}
+
+[System.Serializable]
+public class ObstaclePlacement
+{
+    public int gridX;
+    public int gridY;
+    public ObstacleType type;
+}
+
+[System.Serializable]
+public class RandomObstacleSpec
+{
+    public ObstacleType type;
+    [Tooltip("Bu tipten kaç tane random spawn olsun")]
+    public int count = 1;
 }

@@ -1,13 +1,25 @@
 using System;
 using UnityEngine;
 
+public enum GoalType
+{
+    CollectFish,
+    ClearObstacle
+}
+
 [Serializable]
 public class LevelGoal
 {
-    [Tooltip("Hangi balık toplanacak")]
+    [Tooltip("Goal tipi: Balık toplamak mı, obstacle kırmak mı?")]
+    public GoalType goalType = GoalType.CollectFish;
+
+    [Tooltip("CollectFish için: hangi balık")]
     public FishType targetFish;
 
-    [Tooltip("Kaç tane toplanacak")]
+    [Tooltip("ClearObstacle için: hangi obstacle")]
+    public ObstacleType targetObstacle;
+
+    [Tooltip("Kaç tane toplanacak/kırılacak")]
     public int targetCount = 15;
 
     [HideInInspector] public int currentCount;

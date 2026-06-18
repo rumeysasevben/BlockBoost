@@ -28,13 +28,27 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 734bced906c79314e98efbbe54a96cb0, type: 2}
   - {fileID: 11400000, guid: ca3d7a3dded085c4bba0571aefbf48f8, type: 2}
   collectGoals:
-  - targetFish: 1
+  - goalType: 0
+    targetFish: 1
+    targetObstacle: 0
     targetCount: 30
     currentCount: 0
-  - targetFish: 2
+  - goalType: 0
+    targetFish: 2
+    targetObstacle: 0
     targetCount: 25
     currentCount: 0
-  - targetFish: 3
+  - goalType: 0
+    targetFish: 3
+    targetObstacle: 0
     targetCount: 20
     currentCount: 0
+  obstacles: []
+  randomObstacles:
+  - type: 0
+    count: 3
+  - type: 1
+    count: 3
+  - type: 2
+    count: 2
   backgroundTint: {r: 1, g: 1, b: 1, a: 1}

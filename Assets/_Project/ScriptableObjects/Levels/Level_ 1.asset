@@ -36,19 +36,35 @@ MonoBehaviour:
     targetObstacle: 0
     targetCollectible: 0
     targetCount: 2
-    currentCount: 15
+    currentCount: 0
   - goalType: 2
     targetFish: 0
     targetObstacle: 0
     targetCollectible: 0
     targetCount: 2
-    currentCount: 15
+    currentCount: 2
+  - goalType: 1
+    targetFish: 0
+    targetObstacle: 3
+    targetCollectible: 0
+    targetCount: 1
+    currentCount: 1
+  - goalType: 3
+    targetFish: 0
+    targetObstacle: 3
+    targetCollectible: 0
+    targetCount: 2
+    currentCount: 2
   obstacles: []
   randomObstacles:
+  - type: 3
+    count: 2
   - type: 0
     count: 2
   collectibles: []
   randomCollectibles:
   - type: 0
     count: 2
+  nets: []
+  randomNetCount: 2
   backgroundTint: {r: 1, g: 1, b: 1, a: 1}

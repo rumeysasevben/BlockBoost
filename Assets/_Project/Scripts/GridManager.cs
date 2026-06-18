@@ -15,6 +15,7 @@ public class GridManager : MonoBehaviour
     public GameObject fishPrefab;
     public GameObject obstaclePrefab;
     public GameObject collectiblePrefab;
+    public GameObject fishingNetPrefab;
     public FishData[] fishDataPool = new FishData[0];
 
     [Header("Layout")]
@@ -26,6 +27,7 @@ public class GridManager : MonoBehaviour
     private Fish[,] grid;
     private Dictionary<Vector2Int, Obstacle> obstacles = new Dictionary<Vector2Int, Obstacle>();
     private Dictionary<Vector2Int, Collectible> collectibles = new Dictionary<Vector2Int, Collectible>();
+    private Dictionary<Vector2Int, FishingNet> nets = new Dictionary<Vector2Int, FishingNet>();
 
     private void Awake()
     {
@@ -103,6 +105,9 @@ public class GridManager : MonoBehaviour
 
     public void SwapFish(Fish a, Fish b)
     {
+        // Net üstündeki balıklar swap'a katılmaz
+        if (HasNetAt(a.gridX, a.gridY) || HasNetAt(b.gridX, b.gridY)) return;
+
         int ax = a.gridX, ay = a.gridY;
         int bx = b.gridX, by = b.gridY;
         grid[ax, ay] = b;
@@ -115,6 +120,9 @@ public class GridManager : MonoBehaviour
 
     public IEnumerator SwapFishAnimated(Fish a, Fish b, float duration = 0.2f)
     {
+        // Net üstündeki balıklar swap'a katılmaz
+        if (HasNetAt(a.gridX, a.gridY) || HasNetAt(b.gridX, b.gridY)) yield break;
+
         int ax = a.gridX, ay = a.gridY;
         int bx = b.gridX, by = b.gridY;
         grid[ax, ay] = b;
@@ -232,7 +240,7 @@ public class GridManager : MonoBehaviour
                 f.PopAndDestroy();
             }
             ScoreManager.Instance.AddScore(totalScore);
-            DamageAdjacentObstacles(clearedPositions);
+            DamageAdjacentObstaclesAndNets(clearedPositions);
 
             yield return new WaitForSeconds(0.3f);
             yield return StartCoroutine(FillBoard());
@@ -270,7 +278,6 @@ public class GridManager : MonoBehaviour
         {
             anyMoved = false;
 
-            // Vertical compact per column (fish AND collectibles)
             for (int x = 0; x < width; x++)
             {
                 int writeY = 0;
@@ -278,7 +285,6 @@ public class GridManager : MonoBehaviour
                 {
                     if (IsCellBlocked(x, y)) { writeY = y + 1; continue; }
 
-                    // Fish
                     if (grid[x, y] != null)
                     {
                         if (y != writeY)
@@ -292,7 +298,6 @@ public class GridManager : MonoBehaviour
                         }
                         writeY++;
                     }
-                    // Collectible
                     else if (HasCollectibleAt(x, y))
                     {
                         if (y != writeY)
@@ -309,7 +314,7 @@ public class GridManager : MonoBehaviour
                 }
             }
 
-            // Diagonal pull (sadece balıklar için, collectible diagonal kaymaz)
+            // Diagonal pull (sadece balıklar için)
             for (int y = 0; y < height; y++)
             {
                 for (int x = 0; x < width; x++)
@@ -390,9 +395,6 @@ public class GridManager : MonoBehaviour
         return spawnedTotal;
     }
 
-    /// <summary>
-    /// y=0 sırasındaki collectible'ları teslim et.
-    /// </summary>
     private IEnumerator DeliverCollectiblesAtBottom()
     {
         bool anyDelivered = false;
@@ -411,13 +413,12 @@ public class GridManager : MonoBehaviour
             LevelManager.Instance?.ReportCollectibleDelivered(c.type, 1);
             c.DeliverAndDestroy();
             anyDelivered = true;
-            Debug.Log($"<color=lime>📦 Collectible delivered: {c.type} from x={key.x}</color>");
         }
 
         if (anyDelivered)
         {
             yield return new WaitForSeconds(0.5f);
-            yield return StartCoroutine(FillBoard());  // boşalan hücreleri doldur
+            yield return StartCoroutine(FillBoard());
         }
     }
 
@@ -569,7 +570,7 @@ public class GridManager : MonoBehaviour
             f.PopAndDestroy();
         }
         ScoreManager.Instance.AddScore(totalScore);
-        DamageAdjacentObstacles(clearedPositions);
+        DamageAdjacentObstaclesAndNets(clearedPositions);
 
         yield return new WaitForSeconds(0.4f);
         yield return StartCoroutine(FillBoard());
@@ -624,7 +625,7 @@ public class GridManager : MonoBehaviour
             f.PopAndDestroy();
         }
         ScoreManager.Instance.AddScore(totalScore);
-        DamageAdjacentObstacles(clearedPositions);
+        DamageAdjacentObstaclesAndNets(clearedPositions);
 
         yield return new WaitForSeconds(0.3f);
         yield return StartCoroutine(FillBoard());
@@ -639,8 +640,9 @@ public class GridManager : MonoBehaviour
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
             {
-                if (x + 1 < width && WouldSwapCreateMatch(x, y, x + 1, y)) return true;
-                if (y + 1 < height && WouldSwapCreateMatch(x, y, x, y + 1)) return true;
+                if (HasNetAt(x, y)) continue;  // net üzerindekiler swap'a katılamaz
+                if (x + 1 < width && !HasNetAt(x + 1, y) && WouldSwapCreateMatch(x, y, x + 1, y)) return true;
+                if (y + 1 < height && !HasNetAt(x, y + 1) && WouldSwapCreateMatch(x, y, x, y + 1)) return true;
             }
         return false;
     }
@@ -674,7 +676,7 @@ public class GridManager : MonoBehaviour
         List<Fish> allFish = new List<Fish>();
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
-                if (grid[x, y] != null) allFish.Add(grid[x, y]);
+                if (grid[x, y] != null && !HasNetAt(x, y)) allFish.Add(grid[x, y]);
 
         int attempts = 0;
         while (attempts < 5)
@@ -687,7 +689,7 @@ public class GridManager : MonoBehaviour
             int idx = 0;
             for (int x = 0; x < width; x++)
                 for (int y = 0; y < height; y++)
-                    if (grid[x, y] != null)
+                    if (grid[x, y] != null && !HasNetAt(x, y))
                     {
                         Fish f = allFish[idx++];
                         grid[x, y] = f;
@@ -707,6 +709,7 @@ public class GridManager : MonoBehaviour
         ClearGrid();
         ClearObstacles();
         ClearCollectibles();
+        ClearNets();
 
         width = level.gridWidth;
         height = level.gridHeight;
@@ -724,12 +727,17 @@ public class GridManager : MonoBehaviour
         SpawnCollectibles(level.collectibles);
         SpawnRandomCollectibles(level.randomCollectibles);
 
+        // Önce balıklar
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
                 if (!IsCellBlocked(x, y) && !HasCollectibleAt(x, y))
                     SpawnFishAt(x, y);
 
-        Debug.Log($"<color=cyan>[Grid] {level.levelName}: {width}x{height}, {obstacles.Count} obstacles, {collectibles.Count} collectibles</color>");
+        // Sonra nets — balıkların üstüne yerleşir
+        SpawnFishingNets(level.nets);
+        SpawnRandomNets(level.randomNetCount);
+
+        Debug.Log($"<color=cyan>[Grid] {level.levelName}: {width}x{height}, {obstacles.Count} obs, {collectibles.Count} col, {nets.Count} nets</color>");
     }
 
     private void ClearGrid()
@@ -771,11 +779,9 @@ public class GridManager : MonoBehaviour
             for (int y = 1; y < height; y++)
             {
                 Vector2Int pos = new Vector2Int(x, y);
-                if (!obstacles.ContainsKey(pos))
-                    candidates.Add(pos);
+                if (!obstacles.ContainsKey(pos)) candidates.Add(pos);
             }
         foreach (var spec in specs)
-        {
             for (int i = 0; i < spec.count; i++)
             {
                 if (candidates.Count == 0) return;
@@ -784,7 +790,6 @@ public class GridManager : MonoBehaviour
                 candidates.RemoveAt(idx);
                 SpawnSingleObstacle(pos.x, pos.y, spec.type);
             }
-        }
     }
 
     private void SpawnSingleObstacle(int x, int y, ObstacleType type)
@@ -808,17 +813,40 @@ public class GridManager : MonoBehaviour
         Vector2Int key = new Vector2Int(x, y);
         if (!obstacles.TryGetValue(key, out Obstacle obs)) return;
         if (obs == null) return;
+        ObstacleType brokenType = obs.type;
         bool broken = obs.TakeDamage();
         if (broken)
         {
             obstacles.Remove(key);
-            LevelManager.Instance?.ReportObstacleCleared(obs.type, 1);
+            LevelManager.Instance?.ReportObstacleCleared(brokenType, 1);
+
+            // Cage özel: kırılınca yerine balık spawn et
+            if (brokenType == ObstacleType.Cage)
+            {
+                SpawnFishAt(x, y);
+                Debug.Log($"<color=lime>🐟 Cage broken @ ({x},{y}) - fish released</color>");
+            }
         }
     }
 
-    private void DamageAdjacentObstacles(IEnumerable<Vector2Int> clearedPositions)
+    public void DamageNetAt(int x, int y)
     {
-        HashSet<Vector2Int> toDamage = new HashSet<Vector2Int>();
+        Vector2Int key = new Vector2Int(x, y);
+        if (!nets.TryGetValue(key, out FishingNet net)) return;
+        if (net == null) return;
+        bool broken = net.TakeDamage();
+        if (broken)
+        {
+            nets.Remove(key);
+            LevelManager.Instance?.ReportNetCleared(1);
+            Debug.Log($"<color=lime>🪢 Net broken @ ({x},{y})</color>");
+        }
+    }
+
+    private void DamageAdjacentObstaclesAndNets(IEnumerable<Vector2Int> clearedPositions)
+    {
+        HashSet<Vector2Int> obstaclesToDamage = new HashSet<Vector2Int>();
+        HashSet<Vector2Int> netsToDamage = new HashSet<Vector2Int>();
         int[] dx = { 0, 0, -1, 1 };
         int[] dy = { 1, -1, 0, 0 };
         foreach (var pos in clearedPositions)
@@ -828,10 +856,13 @@ public class GridManager : MonoBehaviour
                 int nx = pos.x + dx[i];
                 int ny = pos.y + dy[i];
                 if (nx < 0 || nx >= width || ny < 0 || ny >= height) continue;
-                if (IsCellBlocked(nx, ny)) toDamage.Add(new Vector2Int(nx, ny));
+                Vector2Int key = new Vector2Int(nx, ny);
+                if (IsCellBlocked(nx, ny)) obstaclesToDamage.Add(key);
+                if (HasNetAt(nx, ny)) netsToDamage.Add(key);
             }
         }
-        foreach (var p in toDamage) DamageObstacleAt(p.x, p.y);
+        foreach (var p in obstaclesToDamage) DamageObstacleAt(p.x, p.y);
+        foreach (var p in netsToDamage) DamageNetAt(p.x, p.y);
     }
 
     // ─── COLLECTIBLES ─────────────────────────
@@ -856,8 +887,6 @@ public class GridManager : MonoBehaviour
     private void SpawnRandomCollectibles(List<RandomCollectibleSpec> specs)
     {
         if (specs == null || collectiblePrefab == null) return;
-
-        // Aday hücreler: üst yarı (collectible'lar yukarıdan başlamalı ki düşmesi anlamlı olsun)
         int minY = Mathf.Max(2, height / 2);
         List<Vector2Int> candidates = new List<Vector2Int>();
         for (int x = 0; x < width; x++)
@@ -867,9 +896,7 @@ public class GridManager : MonoBehaviour
                 if (obstacles.ContainsKey(pos) || collectibles.ContainsKey(pos)) continue;
                 candidates.Add(pos);
             }
-
         foreach (var spec in specs)
-        {
             for (int i = 0; i < spec.count; i++)
             {
                 if (candidates.Count == 0) return;
@@ -878,24 +905,13 @@ public class GridManager : MonoBehaviour
                 candidates.RemoveAt(idx);
                 SpawnSingleCollectible(pos.x, pos.y, spec.type);
             }
-        }
     }
 
     private void SpawnSingleCollectible(int x, int y, CollectibleType type)
     {
-        if (collectiblePrefab == null)
-        {
-            Debug.LogError("[GridManager] collectiblePrefab is not assigned!");
-            return;
-        }
         Vector3 worldPos = GridToWorldPosition(x, y);
         GameObject obj = Instantiate(collectiblePrefab, worldPos, Quaternion.identity, gridParent);
         Collectible c = obj.GetComponent<Collectible>();
-        if (c == null)
-        {
-            Debug.LogError("[GridManager] collectiblePrefab has no Collectible component!");
-            return;
-        }
         c.Initialize(type, x, y);
         collectibles[new Vector2Int(x, y)] = c;
     }
@@ -905,5 +921,65 @@ public class GridManager : MonoBehaviour
         foreach (var kvp in collectibles)
             if (kvp.Value != null) Destroy(kvp.Value.gameObject);
         collectibles.Clear();
+    }
+
+    // ─── FISHING NETS ─────────────────────────
+
+    public bool HasNetAt(int x, int y)
+    {
+        return nets.ContainsKey(new Vector2Int(x, y));
+    }
+
+    private void SpawnFishingNets(List<NetPlacement> placements)
+    {
+        if (placements == null || fishingNetPrefab == null) return;
+        foreach (var p in placements)
+        {
+            if (p.gridX < 0 || p.gridX >= width || p.gridY < 0 || p.gridY >= height) continue;
+            Vector2Int pos = new Vector2Int(p.gridX, p.gridY);
+            if (obstacles.ContainsKey(pos) || collectibles.ContainsKey(pos)) continue;
+            if (nets.ContainsKey(pos)) continue;
+            if (grid[p.gridX, p.gridY] == null) continue;  // altında balık olmalı
+            SpawnSingleNet(p.gridX, p.gridY);
+        }
+    }
+
+    private void SpawnRandomNets(int count)
+    {
+        if (count <= 0 || fishingNetPrefab == null) return;
+        List<Vector2Int> candidates = new List<Vector2Int>();
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+            {
+                Vector2Int pos = new Vector2Int(x, y);
+                if (obstacles.ContainsKey(pos) || collectibles.ContainsKey(pos)) continue;
+                if (nets.ContainsKey(pos)) continue;
+                if (grid[x, y] == null) continue;
+                candidates.Add(pos);
+            }
+        for (int i = 0; i < count; i++)
+        {
+            if (candidates.Count == 0) return;
+            int idx = Random.Range(0, candidates.Count);
+            Vector2Int pos = candidates[idx];
+            candidates.RemoveAt(idx);
+            SpawnSingleNet(pos.x, pos.y);
+        }
+    }
+
+    private void SpawnSingleNet(int x, int y)
+    {
+        Vector3 worldPos = GridToWorldPosition(x, y);
+        GameObject obj = Instantiate(fishingNetPrefab, worldPos, Quaternion.identity, gridParent);
+        FishingNet net = obj.GetComponent<FishingNet>();
+        net.Initialize(x, y);
+        nets[new Vector2Int(x, y)] = net;
+    }
+
+    private void ClearNets()
+    {
+        foreach (var kvp in nets)
+            if (kvp.Value != null) Destroy(kvp.Value.gameObject);
+        nets.Clear();
     }
 }

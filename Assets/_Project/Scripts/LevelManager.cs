@@ -53,6 +53,7 @@ public class LevelManager : MonoBehaviour
             case GoalType.CollectFish:        label = g.targetFish.ToString(); break;
             case GoalType.ClearObstacle:      label = g.targetObstacle.ToString(); break;
             case GoalType.DeliverCollectible: label = g.targetCollectible.ToString(); break;
+            case GoalType.ClearNet:           label = "Net"; break;
             default: label = "?"; break;
         }
         Debug.Log($"[Goal] {label}: {g.currentCount}/{g.targetCount}");
@@ -60,11 +61,7 @@ public class LevelManager : MonoBehaviour
 
     public void LoadLevel(int index)
     {
-        if (index < 0 || index >= allLevels.Length)
-        {
-            Debug.LogWarning($"LevelManager: index {index} aralık dışı.");
-            return;
-        }
+        if (index < 0 || index >= allLevels.Length) return;
 
         CurrentLevel = allLevels[index];
         GridManager.Instance?.ResetForLevel(CurrentLevel);
@@ -72,7 +69,6 @@ public class LevelManager : MonoBehaviour
         IsLevelActive = true;
 
         foreach (var g in CurrentLevel.collectGoals) g.Reset();
-
         ScoreManager.Instance.ResetScore();
 
         OnLevelLoaded?.Invoke(CurrentLevel);
@@ -91,13 +87,11 @@ public class LevelManager : MonoBehaviour
     {
         if (!IsLevelActive || CurrentLevel == null) return;
         foreach (var g in CurrentLevel.collectGoals)
-        {
             if (g.goalType == GoalType.CollectFish && g.targetFish == fish && !g.IsComplete)
             {
                 g.AddProgress(amount);
                 OnGoalProgress?.Invoke(g);
             }
-        }
         if (AllGoalsComplete()) EndLevel();
     }
 
@@ -105,13 +99,11 @@ public class LevelManager : MonoBehaviour
     {
         if (!IsLevelActive || CurrentLevel == null) return;
         foreach (var g in CurrentLevel.collectGoals)
-        {
             if (g.goalType == GoalType.ClearObstacle && g.targetObstacle == obstacle && !g.IsComplete)
             {
                 g.AddProgress(amount);
                 OnGoalProgress?.Invoke(g);
             }
-        }
         if (AllGoalsComplete()) EndLevel();
     }
 
@@ -119,13 +111,23 @@ public class LevelManager : MonoBehaviour
     {
         if (!IsLevelActive || CurrentLevel == null) return;
         foreach (var g in CurrentLevel.collectGoals)
-        {
             if (g.goalType == GoalType.DeliverCollectible && g.targetCollectible == collectible && !g.IsComplete)
             {
                 g.AddProgress(amount);
                 OnGoalProgress?.Invoke(g);
             }
-        }
+        if (AllGoalsComplete()) EndLevel();
+    }
+
+    public void ReportNetCleared(int amount = 1)
+    {
+        if (!IsLevelActive || CurrentLevel == null) return;
+        foreach (var g in CurrentLevel.collectGoals)
+            if (g.goalType == GoalType.ClearNet && !g.IsComplete)
+            {
+                g.AddProgress(amount);
+                OnGoalProgress?.Invoke(g);
+            }
         if (AllGoalsComplete()) EndLevel();
     }
 
@@ -142,18 +144,13 @@ public class LevelManager : MonoBehaviour
     {
         IsLevelActive = false;
         int score = ScoreManager.Instance.CurrentScore;
-        bool goalsDone = AllGoalsComplete();
-
-        if (goalsDone)
+        if (AllGoalsComplete())
         {
             int stars = CalculateStars(score);
             SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
             OnLevelWon?.Invoke(stars);
         }
-        else
-        {
-            OnLevelLost?.Invoke();
-        }
+        else OnLevelLost?.Invoke();
     }
 
     private int CalculateStars(int score)

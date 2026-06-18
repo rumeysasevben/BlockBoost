@@ -5,13 +5,14 @@ public enum GoalType
 {
     CollectFish,
     ClearObstacle,
-    DeliverCollectible
+    DeliverCollectible,
+    ClearNet
 }
 
 [Serializable]
 public class LevelGoal
 {
-    [Tooltip("Goal tipi: Balık, obstacle, veya collectible")]
+    [Tooltip("Goal tipi")]
     public GoalType goalType = GoalType.CollectFish;
 
     [Tooltip("CollectFish için: hangi balık")]
@@ -23,7 +24,7 @@ public class LevelGoal
     [Tooltip("DeliverCollectible için: hangi collectible")]
     public CollectibleType targetCollectible;
 
-    [Tooltip("Kaç tane toplanacak/kırılacak/teslim edilecek")]
+    [Tooltip("Toplam hedef sayı")]
     public int targetCount = 15;
 
     [HideInInspector] public int currentCount;

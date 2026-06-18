@@ -9,7 +9,7 @@ public class LevelUI : MonoBehaviour
     [SerializeField] private TMP_Text movesText;
     [SerializeField] private TMP_Text goalText;
 
-    [Header("HUD Stars (mini)")]
+    [Header("HUD Stars")]
     [SerializeField] private Image[] hudStars;
     [SerializeField] private Sprite starFilled;
     [SerializeField] private Sprite starEmpty;
@@ -45,25 +45,15 @@ public class LevelUI : MonoBehaviour
         RefreshStars(0);
     }
 
-    private void OnMovesChanged(int movesRemaining)
-    {
-        if (movesText) movesText.text = $"Moves: {movesRemaining}";
-    }
-
-    private void OnGoalProgress(LevelGoal goal) => RefreshGoalDisplay();
-
-    private void OnScoreChanged(int score) => RefreshStars(score);
+    private void OnMovesChanged(int m) { if (movesText) movesText.text = $"Moves: {m}"; }
+    private void OnGoalProgress(LevelGoal g) => RefreshGoalDisplay();
+    private void OnScoreChanged(int s) => RefreshStars(s);
 
     private void RefreshGoalDisplay()
     {
         var level = LevelManager.Instance?.CurrentLevel;
         if (level == null || goalText == null) return;
-
-        if (level.collectGoals == null || level.collectGoals.Count == 0)
-        {
-            goalText.text = "";
-            return;
-        }
+        if (level.collectGoals == null || level.collectGoals.Count == 0) { goalText.text = ""; return; }
 
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < level.collectGoals.Count; i++)
@@ -75,6 +65,7 @@ public class LevelUI : MonoBehaviour
                 case GoalType.CollectFish:        label = g.targetFish.ToString(); break;
                 case GoalType.ClearObstacle:      label = g.targetObstacle.ToString(); break;
                 case GoalType.DeliverCollectible: label = g.targetCollectible.ToString(); break;
+                case GoalType.ClearNet:           label = "Net"; break;
                 default: label = "?"; break;
             }
             string status = g.IsComplete ? "<color=#33FF66>OK</color>" : $"{g.currentCount}/{g.targetCount}";

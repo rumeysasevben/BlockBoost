@@ -33,12 +33,18 @@ public class LevelData : ScriptableObject
     public List<RandomObstacleSpec> randomObstacles = new List<RandomObstacleSpec>();
 
     [Header("Collectibles (Sabit)")]
-    [Tooltip("Sabit konuma yerleştirilecek collectible'lar")]
     public List<CollectiblePlacement> collectibles = new List<CollectiblePlacement>();
 
     [Header("Collectibles (Random)")]
-    [Tooltip("Random konuma yerleştirilecek collectible'lar (üst yarıda spawn olur)")]
     public List<RandomCollectibleSpec> randomCollectibles = new List<RandomCollectibleSpec>();
+
+    [Header("Fishing Nets (Sabit)")]
+    [Tooltip("Sabit konumdaki balık ağları (üzerindeki balık swap edilemez)")]
+    public List<NetPlacement> nets = new List<NetPlacement>();
+
+    [Header("Fishing Nets (Random)")]
+    [Tooltip("Random konumda spawn olacak balık ağları")]
+    public int randomNetCount = 0;
 
     [Header("Visual")]
     public Color backgroundTint = Color.white;
@@ -72,4 +78,11 @@ public class RandomCollectibleSpec
 {
     public CollectibleType type;
     public int count = 1;
+}
+
+[System.Serializable]
+public class NetPlacement
+{
+    public int gridX;
+    public int gridY;
 }

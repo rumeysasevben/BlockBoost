@@ -22,7 +22,7 @@ public class GridManager : MonoBehaviour
     public Transform gridParent;
 
     [Header("State")]
-    public bool IsBusy { get; set; }   // booster için public set
+    public bool IsBusy { get; set; }
 
     private Fish[,] grid;
     private Dictionary<Vector2Int, Obstacle> obstacles = new Dictionary<Vector2Int, Obstacle>();
@@ -224,17 +224,29 @@ public class GridManager : MonoBehaviour
             float totalMultiplier = sizeMultiplier * comboLevel;
             int totalScore = 0;
             List<Vector2Int> clearedPositions = new List<Vector2Int>();
+
             foreach (Fish f in toClear)
             {
                 if (f == null) continue;
+                Vector3 wpos = GridToWorldPosition(f.gridX, f.gridY);
+                int fishScore = Mathf.RoundToInt(f.data.scoreValue * totalMultiplier);
+                Color burstColor = f.IsSpecial ? new Color(1f, 0.85f, 0.2f) : new Color(0.6f, 0.9f, 1f);
+
+                MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
+                MatchVFXManager.Instance?.SpawnScorePopup(wpos, fishScore, burstColor);
+
                 clearedPositions.Add(new Vector2Int(f.gridX, f.gridY));
-                totalScore += Mathf.RoundToInt(f.data.scoreValue * totalMultiplier);
+                totalScore += fishScore;
                 LevelManager.Instance?.ReportFishCollected(f.data.fishType, 1);
                 grid[f.gridX, f.gridY] = null;
                 f.PopAndDestroy();
             }
             ScoreManager.Instance.AddScore(totalScore);
             DamageAdjacentObstaclesAndNets(clearedPositions);
+
+            // Camera shake — büyük match veya combo'da
+            if (comboLevel >= 2 || toClear.Count >= 6)
+                CameraShake.Instance?.Shake(0.2f + comboLevel * 0.05f, 0.08f + comboLevel * 0.02f);
 
             yield return new WaitForSeconds(0.3f);
             yield return StartCoroutine(FillBoard());
@@ -251,15 +263,19 @@ public class GridManager : MonoBehaviour
 
     // ─── BOOSTER ACTIONS ─────────────────────────
 
-    /// <summary>
-    /// Hammer booster: belirtilen hücredeki balığı yok eder, cascade tetikler.
-    /// </summary>
     public IEnumerator HammerCellAt(int x, int y)
     {
         IsBusy = true;
         Fish f = GetFishAt(x, y);
         if (f != null)
         {
+            Vector3 wpos = GridToWorldPosition(x, y);
+            Color burstColor = new Color(1f, 0.7f, 0.2f);
+
+            MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
+            MatchVFXManager.Instance?.SpawnScorePopup(wpos, f.data.scoreValue, burstColor);
+            CameraShake.Instance?.Shake(0.2f, 0.08f);
+
             List<Vector2Int> cleared = new List<Vector2Int> { new Vector2Int(x, y) };
             ScoreManager.Instance.AddScore(f.data.scoreValue);
             LevelManager.Instance?.ReportFishCollected(f.data.fishType, 1);
@@ -274,9 +290,6 @@ public class GridManager : MonoBehaviour
         IsBusy = false;
     }
 
-    /// <summary>
-    /// Rocket booster: hedef hücrenin satır+sütununu temizler.
-    /// </summary>
     public IEnumerator RocketCellAt(int x, int y)
     {
         IsBusy = true;
@@ -284,7 +297,6 @@ public class GridManager : MonoBehaviour
         for (int i = 0; i < width; i++)  { Fish f = GetFishAt(i, y); if (f != null) toClear.Add(f); }
         for (int i = 0; i < height; i++) { Fish f = GetFishAt(x, i); if (f != null) toClear.Add(f); }
 
-        // Cascade special activations
         Queue<Fish> queue = new Queue<Fish>(toClear);
         HashSet<Fish> expanded = new HashSet<Fish>();
         while (queue.Count > 0)
@@ -305,14 +317,23 @@ public class GridManager : MonoBehaviour
         foreach (Fish f in expanded)
         {
             if (f == null) continue;
+            Vector3 wpos = GridToWorldPosition(f.gridX, f.gridY);
+            int fishScore = f.data.scoreValue * 2;
+            Color burstColor = new Color(1f, 0.6f, 0.2f);
+
+            MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
+            MatchVFXManager.Instance?.SpawnScorePopup(wpos, fishScore, burstColor);
+
             clearedPositions.Add(new Vector2Int(f.gridX, f.gridY));
-            totalScore += f.data.scoreValue;
+            totalScore += fishScore;
             LevelManager.Instance?.ReportFishCollected(f.data.fishType, 1);
             grid[f.gridX, f.gridY] = null;
             f.PopAndDestroy();
         }
         ScoreManager.Instance.AddScore(totalScore);
         DamageAdjacentObstaclesAndNets(clearedPositions);
+
+        CameraShake.Instance?.Shake(0.3f, 0.15f);
 
         yield return new WaitForSeconds(0.4f);
         yield return StartCoroutine(FillBoard());
@@ -321,7 +342,7 @@ public class GridManager : MonoBehaviour
         IsBusy = false;
     }
 
-    // ─── REST OF METHODS (unchanged from BLOK B) ─────────────────────────
+    // ─── REST OF METHODS ─────────────────────────
 
     private IEnumerator FillBoard()
     {
@@ -601,14 +622,23 @@ public class GridManager : MonoBehaviour
         foreach (Fish f in expanded)
         {
             if (f == null) continue;
+            Vector3 wpos = GridToWorldPosition(f.gridX, f.gridY);
+            int fishScore = f.data.scoreValue * 2;
+            Color burstColor = new Color(1f, 0.6f, 0.2f);
+
+            MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
+            MatchVFXManager.Instance?.SpawnScorePopup(wpos, fishScore, burstColor);
+
             clearedPositions.Add(new Vector2Int(f.gridX, f.gridY));
-            totalScore += f.data.scoreValue * 2;
+            totalScore += fishScore;
             LevelManager.Instance?.ReportFishCollected(f.data.fishType, 1);
             grid[f.gridX, f.gridY] = null;
             f.PopAndDestroy();
         }
         ScoreManager.Instance.AddScore(totalScore);
         DamageAdjacentObstaclesAndNets(clearedPositions);
+
+        CameraShake.Instance?.Shake(0.3f, 0.15f);
 
         yield return new WaitForSeconds(0.4f);
         yield return StartCoroutine(FillBoard());
@@ -654,14 +684,23 @@ public class GridManager : MonoBehaviour
         foreach (Fish f in expanded)
         {
             if (f == null) continue;
+            Vector3 wpos = GridToWorldPosition(f.gridX, f.gridY);
+            int fishScore = Mathf.RoundToInt(f.data.scoreValue * 1.5f);
+            Color burstColor = new Color(1f, 0.4f, 0.7f);
+
+            MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
+            MatchVFXManager.Instance?.SpawnScorePopup(wpos, fishScore, burstColor);
+
             clearedPositions.Add(new Vector2Int(f.gridX, f.gridY));
-            totalScore += Mathf.RoundToInt(f.data.scoreValue * 1.5f);
+            totalScore += fishScore;
             LevelManager.Instance?.ReportFishCollected(f.data.fishType, 1);
             grid[f.gridX, f.gridY] = null;
             f.PopAndDestroy();
         }
         ScoreManager.Instance.AddScore(totalScore);
         DamageAdjacentObstaclesAndNets(clearedPositions);
+
+        CameraShake.Instance?.Shake(0.3f, 0.13f);
 
         yield return new WaitForSeconds(0.3f);
         yield return StartCoroutine(FillBoard());
@@ -761,7 +800,7 @@ public class GridManager : MonoBehaviour
         SpawnFishingNets(level.nets);
         SpawnRandomNets(level.randomNetCount);
 
-        IsBusy = false;  // booster veya başka şey IsBusy bıraktıysa garantile
+        IsBusy = false;
         Debug.Log($"<color=cyan>[Grid] {level.levelName}: {width}x{height}, {obstacles.Count} obs, {collectibles.Count} col, {nets.Count} nets</color>");
     }
 

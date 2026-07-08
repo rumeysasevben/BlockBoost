@@ -107,3 +107,7 @@ MonoBehaviour:
   type: 0
   gridX: 0
   gridY: 0
+  chestSprite: {fileID: 21300000, guid: 3c6bdfb70672d534a9d5e92097841276, type: 3}
+  keySprite: {fileID: 21300000, guid: 06a339c4982f34c45b001760b2573b01, type: 3}
+  fillRatio: 0.75
+  cellSize: 1

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishType: 1
   displayName: Mavi Tang
-  sprite: {fileID: -8547997253365210003, guid: 5f1f8eae818bd6842b636e281c76530c, type: 3}
+  sprite: {fileID: 21300000, guid: b635b9cfc9dbfbb4b8708e339ac6807b, type: 3}
   glowColor: {r: 0.20392157, g: 0.59607846, b: 0.85882354, a: 1}
   scoreValue: 10
   spawnWeight: 1

@@ -48,6 +48,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishingNet
   gridX: 0
   gridY: 0
+  netSprite: {fileID: 21300000, guid: 0ea7f4a25fc79524aba472e0135291b1, type: 3}
+  fillRatio: 0.8
+  netAlpha: 0.85
+  sortingOrder: 10
+  cellSize: 1
   currentHP: 1
 --- !u!212 &4443998915705342836
 SpriteRenderer:

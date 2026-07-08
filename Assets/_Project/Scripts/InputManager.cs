@@ -98,7 +98,7 @@ public class InputManager : MonoBehaviour
 
         StartCoroutine(SwapRoutine(fish, targetFish));
     }
-    
+
     private IEnumerator SwapRoutine(Fish a, Fish b)
     {
         isSwapping = true;
@@ -131,6 +131,20 @@ public class InputManager : MonoBehaviour
             yield break;
         }
 
+        // ─── ROCKET / BOMB + normal balık → match aranmadan aktive et ───
+        // Swap edilenlerden biri Rocket veya Bomb ise, bulunduğu konumda patlat
+        Fish singleSpecial = null;
+        if (IsRocketOrBomb(a) && !b.IsSpecial) singleSpecial = a;
+        else if (IsRocketOrBomb(b) && !a.IsSpecial) singleSpecial = b;
+
+        if (singleSpecial != null)
+        {
+            yield return StartCoroutine(GridManager.Instance.ActivateSpecialAt(singleSpecial));
+            LevelManager.Instance.UseMove();
+            isSwapping = false;
+            yield break;
+        }
+
         // ─── NORMAL MATCH ───
         bool hasMatch =
             MatchFinder.Instance.HasMatchAt(a.gridX, a.gridY) ||
@@ -148,5 +162,12 @@ public class InputManager : MonoBehaviour
         }
 
         isSwapping = false;
+    }
+
+    private bool IsRocketOrBomb(Fish f)
+    {
+        return f.specialType == SpecialType.RocketH
+            || f.specialType == SpecialType.RocketV
+            || f.specialType == SpecialType.Bomb;
     }
 }

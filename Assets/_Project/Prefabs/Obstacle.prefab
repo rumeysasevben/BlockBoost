@@ -82,15 +82,15 @@ SpriteRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -1
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 10911, guid: 0000000000000000f000000000000000, type: 0}
-  m_Color: {r: 1, g: 0, b: 0, a: 1}
+  m_Sprite: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 0.58, y: 0.46}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_SpriteSortPoint: 0
 --- !u!114 &8095838045717783353
 MonoBehaviour:
@@ -107,4 +107,10 @@ MonoBehaviour:
   type: 0
   gridX: 3
   gridY: 3
+  seaweedSprite: {fileID: -6866832159502873631, guid: fd73fafa1d84e31488c6b54039310cc9, type: 3}
+  coralSprite: {fileID: -6263006816017299157, guid: 27b391bf3c1372b4d9ca9d05a8cb6534, type: 3}
+  iceSprite: {fileID: -856085545168688419, guid: 045904ae0f1db504e859cf205220b0b7, type: 3}
+  cageSprite: {fileID: -1516043142803438348, guid: ca9fb69cabb70aa4789eec4b4888987f, type: 3}
+  cellSize: 1
+  fillRatio: 0.9
   currentHP: 0

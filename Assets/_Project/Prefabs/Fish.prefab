@@ -108,6 +108,11 @@ MonoBehaviour:
   data: {fileID: 0}
   gridX: 0
   gridY: 0
+  specialType: 0
+  bombSprite: {fileID: 21300000, guid: e0437173550bdc64bbb95b8bb5edf32d, type: 3}
+  colorBombSprite: {fileID: -7786371885269461310, guid: 4b6b4aa8dd05ace448ff16941b0c0852, type: 3}
+  rocketSprite: {fileID: -666232944909175049, guid: 6f979a0e4f6280640a507f2196e2207c, type: 3}
+  targetCellSize: 0.8
 --- !u!61 &4718665992264860396
 BoxCollider2D:
   m_ObjectHideFlags: 0

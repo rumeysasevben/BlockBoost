@@ -1,10 +1,16 @@
 fileFormatVersion: 2
-guid: 6febe99a9afcc6546b93fd11d18f039c
+guid: 4b6b4aa8dd05ace448ff16941b0c0852
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7681211163348114894
-    second: "ye\u015Fil_0"
+      213: -7786371885269461310
+    second: colorbomb 1_0
+  - first:
+      213: -3207636053914416929
+    second: colorbomb 1_1
+  - first:
+      213: -1063477601615955579
+    second: colorbomb 1_2
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +106,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: "ye\u015Fil_0"
+      name: colorbomb 1_0
       rect:
         serializedVersion: 2
-        x: 4
-        y: 11
-        width: 56
-        height: 40
+        x: 204
+        y: 656
+        width: 87
+        height: 88
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +121,52 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ecd11243bd4299a60800000000000000
-      internalID: 7681211163348114894
+      spriteID: 2c6dc69360041f390800000000000000
+      internalID: -7786371885269461310
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: colorbomb 1_1
+      rect:
+        serializedVersion: 2
+        x: 229
+        y: 220
+        width: 566
+        height: 567
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fd802b5f0003c73d0800000000000000
+      internalID: -3207636053914416929
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: colorbomb 1_2
+      rect:
+        serializedVersion: 2
+        x: 750
+        y: 647
+        width: 122
+        height: 122
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 589b81181c4cd31f0800000000000000
+      internalID: -1063477601615955579
       vertices: []
       indices: 
       edges: []
@@ -135,7 +185,9 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      "ye\u015Fil_0": 7681211163348114894
+      colorbomb 1_0: -7786371885269461310
+      colorbomb 1_1: -3207636053914416929
+      colorbomb 1_2: -1063477601615955579
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 public class GridManager : MonoBehaviour
 {
@@ -43,7 +44,7 @@ public class GridManager : MonoBehaviour
         GameObject obj = Instantiate(fishPrefab, worldPos, Quaternion.identity, gridParent);
         Fish fish = obj.GetComponent<Fish>();
         FishData safeData = GetSafeRandomFishData(x, y);
-        fish.Initialize(safeData, x, y);
+        fish.Initialize(safeData, x, y, cellSize);
         grid[x, y] = fish;
     }
 
@@ -342,6 +343,67 @@ public class GridManager : MonoBehaviour
         IsBusy = false;
     }
 
+    // Bir special tile'ı (Rocket/Bomb) bulunduğu konumda aktive eder.
+    // Swap ile tetiklendiğinde çağrılır (match gerektirmez).
+    public IEnumerator ActivateSpecialAt(Fish special)
+    {
+        IsBusy = true;
+
+        HashSet<Fish> toClear = new HashSet<Fish>();
+        toClear.Add(special);
+
+        // Special'ın kendi aktivasyon alanını al
+        List<Fish> initialArea = GetActivationArea(special);
+        foreach (var f in initialArea)
+            if (f != null) toClear.Add(f);
+
+        // Zincirleme: alan içinde başka special varsa onları da patlat
+        Queue<Fish> queue = new Queue<Fish>(toClear);
+        HashSet<Fish> expanded = new HashSet<Fish>();
+        while (queue.Count > 0)
+        {
+            Fish f = queue.Dequeue();
+            if (f == null || expanded.Contains(f)) continue;
+            expanded.Add(f);
+            if (f.IsSpecial && f != special)
+            {
+                List<Fish> area = GetActivationArea(f);
+                foreach (var aa in area)
+                    if (aa != null && !expanded.Contains(aa)) queue.Enqueue(aa);
+            }
+        }
+
+        int totalScore = 0;
+        List<Vector2Int> clearedPositions = new List<Vector2Int>();
+        foreach (Fish f in expanded)
+        {
+            if (f == null) continue;
+            Vector3 wpos = GridToWorldPosition(f.gridX, f.gridY);
+            int fishScore = f.data.scoreValue * 2;
+            Color burstColor = new Color(1f, 0.6f, 0.2f);
+
+            MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
+            MatchVFXManager.Instance?.SpawnScorePopup(wpos, fishScore, burstColor);
+
+            clearedPositions.Add(new Vector2Int(f.gridX, f.gridY));
+            totalScore += fishScore;
+            LevelManager.Instance?.ReportFishCollected(f.data.fishType, 1);
+            grid[f.gridX, f.gridY] = null;
+            f.PopAndDestroy();
+        }
+        ScoreManager.Instance.AddScore(totalScore);
+        DamageAdjacentObstaclesAndNets(clearedPositions);
+
+        CameraShake.Instance?.Shake(0.3f, 0.15f);
+
+        yield return new WaitForSeconds(0.4f);
+        yield return StartCoroutine(FillBoard());
+        yield return StartCoroutine(DeliverCollectiblesAtBottom());
+        yield return StartCoroutine(ProcessMatches());
+
+        IsBusy = false;
+    }
+
     // ─── REST OF METHODS ─────────────────────────
 
     private IEnumerator FillBoard()
@@ -468,7 +530,7 @@ public class GridManager : MonoBehaviour
                 Vector3 targetPos = GridToWorldPosition(x, y);
                 GameObject obj = Instantiate(fishPrefab, spawnPos, Quaternion.identity, gridParent);
                 Fish fish = obj.GetComponent<Fish>();
-                fish.Initialize(GetSafeRandomFishData(x, y), x, y);
+                fish.Initialize(GetSafeRandomFishData(x, y), x, y, cellSize);
                 fish.MoveTo(targetPos, fallDuration);
                 grid[x, y] = fish;
                 spawnOffset++;
@@ -854,7 +916,7 @@ public class GridManager : MonoBehaviour
         Vector3 worldPos = GridToWorldPosition(x, y);
         GameObject obj = Instantiate(obstaclePrefab, worldPos, Quaternion.identity, gridParent);
         Obstacle obs = obj.GetComponent<Obstacle>();
-        obs.Initialize(type, x, y);
+        obs.Initialize(type, x, y, cellSize);
         obstacles[new Vector2Int(x, y)] = obs;
     }
 
@@ -875,7 +937,20 @@ public class GridManager : MonoBehaviour
         {
             obstacles.Remove(key);
             LevelManager.Instance?.ReportObstacleCleared(brokenType, 1);
-            if (brokenType == ObstacleType.Cage) SpawnFishAt(x, y);
+            if (brokenType == ObstacleType.Cage)
+            {
+                SpawnFishAt(x, y);
+                Fish spawned = GetFishAt(x, y);
+                if (spawned != null)
+                {
+                    // Baligin normalize edilmis gercek boyutunu koru, ona dogru buyut
+                    Vector3 correctScale = spawned.transform.localScale;
+                    spawned.transform.localScale = Vector3.zero;
+                    spawned.transform.DOScale(correctScale, 0.3f).SetEase(DG.Tweening.Ease.OutBack);
+                    Vector3 wpos = GridToWorldPosition(x, y);
+                    MatchVFXManager.Instance?.SpawnBurst(wpos, new Color(0.6f, 0.9f, 1f));
+                }
+            }
         }
     }
 
@@ -955,7 +1030,7 @@ public class GridManager : MonoBehaviour
         Vector3 worldPos = GridToWorldPosition(x, y);
         GameObject obj = Instantiate(collectiblePrefab, worldPos, Quaternion.identity, gridParent);
         Collectible c = obj.GetComponent<Collectible>();
-        c.Initialize(type, x, y);
+        c.Initialize(type, x, y, cellSize);
         collectibles[new Vector2Int(x, y)] = c;
     }
 
@@ -1011,7 +1086,7 @@ public class GridManager : MonoBehaviour
         Vector3 worldPos = GridToWorldPosition(x, y);
         GameObject obj = Instantiate(fishingNetPrefab, worldPos, Quaternion.identity, gridParent);
         FishingNet net = obj.GetComponent<FishingNet>();
-        net.Initialize(x, y);
+        net.Initialize(x, y, cellSize);
         nets[new Vector2Int(x, y)] = net;
     }
 

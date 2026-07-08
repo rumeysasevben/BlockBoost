@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::FishData
   fishType: 5
   displayName: "Ye\u015Fil Bal\u0131k"
-  sprite: {fileID: 7681211163348114894, guid: 6febe99a9afcc6546b93fd11d18f039c, type: 3}
+  sprite: {fileID: 21300000, guid: 997d8b7d9675fe045b3890bd4bed2123, type: 3}
   glowColor: {r: 0.18039216, g: 0.8, b: 0.44313726, a: 1}
   scoreValue: 10
   spawnWeight: 1

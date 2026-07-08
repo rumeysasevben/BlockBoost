@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: a112b188a396a8946a27fc74feb75a88
+guid: db0f5e1e1e0e63145a065ec1ca656402
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3156384156260662291
-    second: "palya\xE7o_0"
+      213: -7024648299739136217
+    second: background_main_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -100,13 +100,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: "palya\xE7o_0"
+      name: background_main_0
       rect:
         serializedVersion: 2
-        x: 2
-        y: 14
-        width: 60
-        height: 36
+        x: 0
+        y: 0
+        width: 1080
+        height: 1920
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -115,8 +115,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: de3896745554234d0800000000000000
-      internalID: -3156384156260662291
+      spriteID: 72f3ffde69f638e90800000000000000
+      internalID: -7024648299739136217
       vertices: []
       indices: 
       edges: []
@@ -135,7 +135,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      "palya\xE7o_0": -3156384156260662291
+      background_main_0: -7024648299739136217
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -15,14 +15,30 @@ public class Fish : MonoBehaviour
     [Header("Special")]
     public SpecialType specialType = SpecialType.None;
 
+    [Header("Special Sprites")]
+    public Sprite bombSprite;
+    public Sprite colorBombSprite;
+    public Sprite rocketSprite; // RocketH; RocketV icin 90 derece dondurulur
+
+    [Header("Sizing")]
+    [Range(0.5f, 1f)] public float fillRatio = 0.85f; // Hucrenin ne kadarini kaplasin
+
     public bool IsSpecial => specialType != SpecialType.None;
 
     private SpriteRenderer sr;
     private Vector3 baseScale = Vector3.one;
+    private float cellSize = 0.6f; // GridManager tarafindan Initialize'da set edilir
 
     private void Awake()
     {
         sr = GetComponent<SpriteRenderer>();
+    }
+
+    // GridManager cellSize'i gecirir; eski cagrilar icin varsayilan overload da var
+    public void Initialize(FishData fishData, int x, int y, float gridCellSize)
+    {
+        cellSize = gridCellSize;
+        Initialize(fishData, x, y);
     }
 
     public void Initialize(FishData fishData, int x, int y)
@@ -33,12 +49,26 @@ public class Fish : MonoBehaviour
         specialType = SpecialType.None;
         sr.sprite = fishData.sprite;
         sr.color = Color.white;
-        transform.localScale = baseScale;
+        transform.rotation = Quaternion.identity; // onceki special rotasyonunu sifirla
+
+        // Sprite'i hucre boyutuna normalize et (buyuk PNG'ler tasmasin)
+        FitToCell(fishData.sprite);
+
         name = $"Fish_{fishData.fishType}_({x},{y})";
 
         BoxCollider2D col = GetComponent<BoxCollider2D>();
         if (col != null && fishData.sprite != null)
             col.size = fishData.sprite.bounds.size;
+    }
+
+    private void FitToCell(Sprite sprite)
+    {
+        if (sprite == null) { baseScale = Vector3.one; transform.localScale = baseScale; return; }
+        float target = cellSize * fillRatio;
+        float spriteSize = Mathf.Max(sprite.bounds.size.x, sprite.bounds.size.y);
+        float scaleFactor = spriteSize > 0f ? target / spriteSize : 1f;
+        baseScale = Vector3.one * scaleFactor;
+        transform.localScale = baseScale;
     }
 
     public void SetGridPosition(int x, int y)
@@ -51,35 +81,67 @@ public class Fish : MonoBehaviour
     }
 
     /// <summary>
-    /// Bu balığı bir special tile'a dönüştürür. Renk + scale değişir.
+    /// Bu baligi bir special tile'a donusturur. Sprite + boyut + efekt degisir.
     /// </summary>
     public void MakeSpecial(SpecialType type)
     {
         specialType = type;
         SetGridPosition(gridX, gridY);
 
+        // Hedef boyut: baliklarla ayni referans (cellSize * fillRatio)
+        float targetWorldSize = cellSize * fillRatio;
+
+        transform.rotation = Quaternion.identity;
+        sr.color = Color.white;
+
+        Sprite chosen = null;
+        bool rotate = false;
+
         switch (type)
         {
             case SpecialType.RocketH:
-                sr.color = new Color(1f, 0.85f, 0.2f);   // sarı
+                chosen = rocketSprite;
+                if (chosen == null) sr.color = new Color(1f, 0.85f, 0.2f);
                 break;
+
             case SpecialType.RocketV:
-                sr.color = new Color(0.2f, 0.85f, 1f);   // mavi
+                chosen = rocketSprite;
+                rotate = true;
+                if (chosen == null) sr.color = new Color(0.2f, 0.85f, 1f);
                 break;
+
             case SpecialType.Bomb:
-                sr.color = new Color(0.85f, 0.3f, 1f);   // mor
+                chosen = bombSprite;
+                if (chosen == null) sr.color = new Color(0.85f, 0.3f, 1f);
                 break;
+
             case SpecialType.ColorBomb:
-                sr.color = new Color(1f, 0.4f, 0.7f);    // pembe
+                chosen = colorBombSprite;
+                if (chosen == null) sr.color = new Color(1f, 0.4f, 0.7f);
                 break;
+
             default:
                 sr.color = Color.white;
                 break;
         }
 
+        if (chosen != null)
+        {
+            sr.sprite = chosen;
+            float specialSize = Mathf.Max(chosen.bounds.size.x, chosen.bounds.size.y);
+            float scaleFactor = specialSize > 0f ? targetWorldSize / specialSize : 1f;
+            baseScale = Vector3.one * scaleFactor;
+        }
+        else
+        {
+            FitToCell(data != null ? data.sprite : null);
+        }
+
+        if (rotate) transform.rotation = Quaternion.Euler(0f, 0f, 90f);
+
         transform.DOKill();
-        transform.localScale = Vector3.one;
-        transform.DOPunchScale(Vector3.one * 0.3f, 0.4f, 8, 0.5f);
+        transform.localScale = baseScale;
+        transform.DOPunchScale(baseScale * 0.3f, 0.4f, 8, 0.5f);
     }
 
     public void PopAndDestroy(float duration = 0.25f)
@@ -87,8 +149,9 @@ public class Fish : MonoBehaviour
         transform.DOKill();
         sr.DOColor(Color.white, duration * 0.4f);
 
+        Vector3 s = transform.localScale;
         Sequence seq = DOTween.Sequence();
-        seq.Append(transform.DOScale(1.2f, duration * 0.3f).SetEase(Ease.OutQuad));
+        seq.Append(transform.DOScale(s * 1.2f, duration * 0.3f).SetEase(Ease.OutQuad));
         seq.Append(transform.DOScale(0f, duration * 0.7f).SetEase(Ease.InBack));
         seq.OnComplete(() => Destroy(gameObject));
     }

@@ -16,8 +16,8 @@ MonoBehaviour:
   levelName: Level 4
   moveLimit: 20
   targetScore: 2000
-  twoStarScore: 4000
-  threeStarScore: 6500
+  twoStarScore: 3500
+  threeStarScore: 4500
   gridWidth: 8
   gridHeight: 8
   levelFishPool:
@@ -32,19 +32,19 @@ MonoBehaviour:
     targetObstacle: 0
     targetCollectible: 0
     targetCount: 5
-    currentCount: 2
+    currentCount: 5
   - goalType: 1
     targetFish: 4
     targetObstacle: 2
     targetCollectible: 0
     targetCount: 5
-    currentCount: 22
+    currentCount: 5
   - goalType: 0
     targetFish: 4
     targetObstacle: 0
     targetCollectible: 0
     targetCount: 20
-    currentCount: 22
+    currentCount: 20
   obstacles: []
   randomObstacles:
   - type: 2

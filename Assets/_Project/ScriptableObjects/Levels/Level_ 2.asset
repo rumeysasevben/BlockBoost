@@ -15,9 +15,9 @@ MonoBehaviour:
   levelNumber: 2
   levelName: Level 2
   moveLimit: 22
-  targetScore: 1200
-  twoStarScore: 2400
-  threeStarScore: 3600
+  targetScore: 1000
+  twoStarScore: 1500
+  threeStarScore: 3000
   gridWidth: 7
   gridHeight: 7
   levelFishPool:
@@ -37,7 +37,7 @@ MonoBehaviour:
     targetObstacle: 0
     targetCollectible: 0
     targetCount: 5
-    currentCount: 15
+    currentCount: 5
   obstacles: []
   randomObstacles:
   - type: 0

@@ -2353,7 +2353,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -2530,7 +2529,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -3576,7 +3574,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -4411,7 +4408,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -4703,7 +4699,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -4863,10 +4858,67 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
+--- !u!1 &1516751251
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1516751252}
+  - component: {fileID: 1516751253}
+  m_Layer: 0
+  m_Name: FishSchoolManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1516751252
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1516751251}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1516751253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1516751251}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 367b2e75ae00b33439679e000c400e27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::FishSchool
+  fishSprites:
+  - {fileID: 21300000, guid: 29e0996098fb2914db7b5a46446b5680, type: 3}
+  - {fileID: 21300000, guid: 997d8b7d9675fe045b3890bd4bed2123, type: 3}
+  - {fileID: 21300000, guid: a25cce62ee65f324494687b790d82b85, type: 3}
+  - {fileID: 21300000, guid: c51792ce9a4173246b65d3472944f756, type: 3}
+  - {fileID: 21300000, guid: 61f8ce80e4cd7df4e93a0f6dc2a4ceab, type: 3}
+  minInterval: 8
+  maxInterval: 15
+  minFishPerSchool: 4
+  maxFishPerSchool: 8
+  fishScale: 0.18
+  fishAlpha: 0.22
+  swimDuration: 6
+  sortingOrder: -5
 --- !u!1 &1522578746
 GameObject:
   m_ObjectHideFlags: 0
@@ -5093,7 +5145,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -6941,7 +6992,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -7308,7 +7358,6 @@ MonoBehaviour:
   hoverScale: 1.06
   pressScale: 0.9
   duration: 0.12
-  popScale: 1.12
   popDuration: 0.18
   useHover: 1
   playSfx: 1
@@ -7335,3 +7384,4 @@ SceneRoots:
   - {fileID: 597274146}
   - {fileID: 2042472402}
   - {fileID: 1522578748}
+  - {fileID: 1516751252}

@@ -15,9 +15,9 @@ MonoBehaviour:
   levelNumber: 5
   levelName: Level 5
   moveLimit: 18
-  targetScore: 2500
-  twoStarScore: 5000
-  threeStarScore: 8000
+  targetScore: 2100
+  twoStarScore: 3500
+  threeStarScore: 4000
   gridWidth: 8
   gridHeight: 8
   levelFishPool:
@@ -42,14 +42,14 @@ MonoBehaviour:
     currentCount: 2
   - goalType: 0
     targetFish: 5
-    targetObstacle: 0
+    targetObstacle: 1
     targetCollectible: 0
-    targetCount: 20
-    currentCount: 12
+    targetCount: 15
+    currentCount: 15
   obstacles: []
   randomObstacles:
   - type: 2
-    count: 3
+    count: 4
   - type: 3
     count: 3
   - type: 1
@@ -57,7 +57,7 @@ MonoBehaviour:
   collectibles: []
   randomCollectibles:
   - type: 1
-    count: 3
+    count: 2
   nets: []
   randomNetCount: 0
   hammerCount: 2

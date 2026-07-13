@@ -669,15 +669,54 @@ public class GridManager : MonoBehaviour
             seq.OnComplete(() => { if (cage != null) Destroy(cage.gameObject); });
         }
 
-        // Kafesin yerine balik dogur
-        SpawnFishAt(target.x, target.y);
-        Fish spawned = GetFishAt(target.x, target.y);
-        if (spawned != null)
+        // Kafesteki balık yüzerek kaçsın, sonra yerine yeni balık düşsün
+        SpawnEscapingFishThenRefill(target.x, target.y);
+    }
+
+    // Kafes kırılınca içindeki balık yüzerek ekrandan kaçar, sonra yerine yeni balık düşer
+    private void SpawnEscapingFishThenRefill(int x, int y)
+    {
+        Vector3 startPos = GridToWorldPosition(x, y);
+
+        // Geçici bir kaçan balık oluştur (grid'e KAYDEDİLMEZ, sadece görsel)
+        GameObject obj = Instantiate(fishPrefab, startPos, Quaternion.identity, gridParent);
+        Fish escaper = obj.GetComponent<Fish>();
+        escaper.Initialize(GetRandomFishData(), x, y, cellSize);
+
+        // Collider/etkileşimi kapat (sadece animasyon objesi)
+        var col = obj.GetComponent<Collider2D>();
+        if (col != null) col.enabled = false;
+
+        // Rastgele bir yöne yüzerek kaç
+        // Yukarı doğru rastgele bir yöne yüz (su yüzeyine kaçar gibi)
+        float angle = Random.Range(30f, 150f) * Mathf.Deg2Rad;
+        Vector3 dir = new Vector3(Mathf.Cos(angle), Mathf.Sin(angle), 0f);
+        Vector3 escapeTarget = startPos + dir * (cellSize * 4f);
+
+        obj.transform.DOKill();
+        // hafif dönerek + solarak yüzsün
+        obj.transform.DOMove(escapeTarget, 0.8f).SetEase(Ease.InQuad);
+        obj.transform.DORotate(new Vector3(0, 0, Random.Range(-90f, 90f)), 0.8f);
+        SpriteRenderer sr = obj.GetComponent<SpriteRenderer>();
+        if (sr != null) sr.DOFade(0f, 0.8f).SetEase(Ease.InQuad);
+        Destroy(obj, 0.85f);
+
+        // Kaçış başladıktan kısa süre sonra yerine yeni balık düşür
+        DOVirtual.DelayedCall(0.4f, () =>
         {
-            Vector3 correctScale = spawned.transform.localScale;
-            spawned.transform.localScale = Vector3.zero;
-            spawned.transform.DOScale(correctScale, 0.3f).SetEase(Ease.OutBack).SetDelay(0.2f);
-        }
+            if (grid == null) return;
+            if (x < 0 || x >= width || y < 0 || y >= height) return;
+            if (grid[x, y] != null) return; // zaten doluysa dokunma
+
+            SpawnFishAt(x, y);
+            Fish spawned = GetFishAt(x, y);
+            if (spawned != null)
+            {
+                Vector3 correctScale = spawned.transform.localScale;
+                spawned.transform.localScale = Vector3.zero;
+                spawned.transform.DOScale(correctScale, 0.3f).SetEase(Ease.OutBack);
+            }
+        });
     }
 
     private List<Fish> GetActivationArea(Fish special)
@@ -927,41 +966,56 @@ public class GridManager : MonoBehaviour
         return hasMatch;
     }
 
-    public IEnumerator ShuffleGrid()
+   public IEnumerator ShuffleGrid()
     {
         AudioManager.Instance?.PlayShuffle();
 
-        List<Fish> allFish = new List<Fish>();
-        for (int x = 0; x < width; x++)
-            for (int y = 0; y < height; y++)
-                if (grid[x, y] != null && !HasNetAt(x, y)) allFish.Add(grid[x, y]);
+        // idle animasyonunu durdur (çakışmayı önle)
+        idleTimer = 0f;
 
         int attempts = 0;
-        while (attempts < 5)
+        while (attempts < 10)
         {
+            attempts++;
+
+            // Her turda grid'i TAZE topla (eski listeyi tekrar kullanma!)
+            List<Fish> allFish = new List<Fish>();
+            List<Vector2Int> slots = new List<Vector2Int>();
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                    if (grid[x, y] != null && !HasNetAt(x, y))
+                    {
+                        allFish.Add(grid[x, y]);
+                        slots.Add(new Vector2Int(x, y));
+                    }
+
+            if (allFish.Count == 0) yield break;
+
+            // Karıştır
             for (int i = allFish.Count - 1; i > 0; i--)
             {
                 int j = Random.Range(0, i + 1);
                 (allFish[i], allFish[j]) = (allFish[j], allFish[i]);
             }
-            int idx = 0;
-            for (int x = 0; x < width; x++)
-                for (int y = 0; y < height; y++)
-                    if (grid[x, y] != null && !HasNetAt(x, y))
-                    {
-                        Fish f = allFish[idx++];
-                        grid[x, y] = f;
-                        f.SetGridPosition(x, y);
-                        f.MoveTo(GridToWorldPosition(x, y), 0.4f);
-                    }
-            yield return new WaitForSeconds(0.5f);
-            attempts++;
 
-            // Geçerli hamle varsa dur — hazır match olsa da olur, aşağıda patlatacağız
+            // Karışık balıkları slotlara yerleştir
+            for (int i = 0; i < slots.Count; i++)
+            {
+                Vector2Int s = slots[i];
+                Fish f = allFish[i];
+                grid[s.x, s.y] = f;
+                f.SetGridPosition(s.x, s.y);
+                f.transform.DOKill();  // önceki tween'i temizle
+                f.MoveTo(GridToWorldPosition(s.x, s.y), 0.4f);
+            }
+
+            yield return new WaitForSeconds(0.5f);
+
+            // Geçerli hamle varsa dur
             if (HasAnyValidMove()) break;
         }
 
-        // Shuffle sonrası tesadüfen match oluştuysa otomatik patlat
+        // Shuffle sonrası tesadüfen match oluştuysa patlat
         if (HasAnyMatchNow())
             yield return StartCoroutine(ProcessMatches());
     }
@@ -998,7 +1052,7 @@ public class GridManager : MonoBehaviour
             chosen.MakeSpecial(type);
             AudioManager.Instance?.PlaySpecialCreate();
             converted.Add(chosen);
-            
+
             LevelManager.Instance?.DecrementMoveForBonus();
 
             yield return new WaitForSeconds(0.2f);
@@ -1179,17 +1233,9 @@ public class GridManager : MonoBehaviour
 
             if (brokenType == ObstacleType.Cage)
             {
-                SpawnFishAt(x, y);
-                Fish spawned = GetFishAt(x, y);
-                if (spawned != null)
-                {
-                    // Baligin normalize edilmis gercek boyutunu koru, ona dogru buyut
-                    Vector3 correctScale = spawned.transform.localScale;
-                    spawned.transform.localScale = Vector3.zero;
-                    spawned.transform.DOScale(correctScale, 0.3f).SetEase(DG.Tweening.Ease.OutBack);
-                    Vector3 wpos = GridToWorldPosition(x, y);
-                    MatchVFXManager.Instance?.SpawnBurst(wpos, new Color(0.6f, 0.9f, 1f));
-                }
+                Vector3 wpos = GridToWorldPosition(x, y);
+                MatchVFXManager.Instance?.SpawnBurst(wpos, new Color(0.6f, 0.9f, 1f));
+                SpawnEscapingFishThenRefill(x, y);
             }
         }
     }

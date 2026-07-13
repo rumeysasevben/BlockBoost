@@ -28,7 +28,6 @@ public class GridManager : MonoBehaviour
     private Fish[,] grid;
     private float idleTimer = 0f;
     private const float idleDelay = 3.5f;
-    private bool idlePlaying = false;
     private Dictionary<Vector2Int, Obstacle> obstacles = new Dictionary<Vector2Int, Obstacle>();
     private Dictionary<Vector2Int, Collectible> collectibles = new Dictionary<Vector2Int, Collectible>();
     private Dictionary<Vector2Int, FishingNet> nets = new Dictionary<Vector2Int, FishingNet>();
@@ -157,7 +156,6 @@ public class GridManager : MonoBehaviour
     public IEnumerator SwapFishAnimated(Fish a, Fish b, float duration = 0.2f, bool playSound = true)
     {
         idleTimer = 0f;
-        idlePlaying = false;
         if (HasNetAt(a.gridX, a.gridY) || HasNetAt(b.gridX, b.gridY)) yield break;
         int ax = a.gridX, ay = a.gridY;
         int bx = b.gridX, by = b.gridY;
@@ -966,6 +964,101 @@ public class GridManager : MonoBehaviour
         // Shuffle sonrası tesadüfen match oluştuysa otomatik patlat
         if (HasAnyMatchNow())
             yield return StartCoroutine(ProcessMatches());
+    }
+
+    // Faz 1: kalan hamle kadar rastgele balığı special yap
+    // Faz 2: hepsini sırayla patlat
+    public IEnumerator ConvertMovesToBonus(int remainingMoves)
+    {
+        IsBusy = true;
+
+        // ── FAZ 1: Dönüştürme ──
+        List<Fish> converted = new List<Fish>();
+
+        for (int m = 0; m < remainingMoves; m++)
+        {
+            List<Fish> candidates = new List<Fish>();
+            for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
+                {
+                    Fish f = grid[x, y];
+                    if (f != null && !f.IsSpecial && !HasNetAt(x, y))
+                        candidates.Add(f);
+                }
+
+            if (candidates.Count == 0) break;
+
+            Fish chosen = candidates[Random.Range(0, candidates.Count)];
+
+            int roll = Random.Range(0, 3);
+            SpecialType type = roll == 0 ? SpecialType.RocketH
+                             : roll == 1 ? SpecialType.RocketV
+                             : SpecialType.Bomb;
+
+            chosen.MakeSpecial(type);
+            AudioManager.Instance?.PlaySpecialCreate();
+            converted.Add(chosen);
+            
+            LevelManager.Instance?.DecrementMoveForBonus();
+
+            yield return new WaitForSeconds(0.2f);
+        }
+
+        yield return new WaitForSeconds(0.3f);
+
+        // ── FAZ 2: Patlatma ──
+        foreach (Fish special in converted)
+        {
+            // balık faz 1'den sonra hâlâ tahtada mı? (başka patlama yok ettiyse atla)
+            if (special == null) continue;
+            if (special.gridX < 0 || special.gridX >= width || special.gridY < 0 || special.gridY >= height) continue;
+            if (grid[special.gridX, special.gridY] != special) continue;
+
+            // bu special + etki alanı + zincir
+            HashSet<Fish> toClear = new HashSet<Fish>();
+            Queue<Fish> queue = new Queue<Fish>();
+            queue.Enqueue(special);
+
+            while (queue.Count > 0)
+            {
+                Fish f = queue.Dequeue();
+                if (f == null || toClear.Contains(f)) continue;
+                toClear.Add(f);
+                if (f.IsSpecial)
+                {
+                    foreach (var a in GetActivationArea(f))
+                        if (a != null && !toClear.Contains(a)) queue.Enqueue(a);
+                }
+            }
+
+            AudioManager.Instance?.PlaySpecial(special.specialType);
+            CameraShake.Instance?.Shake(0.18f, 0.05f);
+
+            int totalScore = 0;
+            foreach (Fish f in toClear)
+            {
+                if (f == null) continue;
+                if (f.gridX < 0 || f.gridX >= width || f.gridY < 0 || f.gridY >= height) continue;
+                if (grid[f.gridX, f.gridY] != f) continue;  // zaten yok edilmişse atla
+
+                Vector3 wpos = GridToWorldPosition(f.gridX, f.gridY);
+                int fishScore = f.data.scoreValue * 2;
+                Color burstColor = new Color(1f, 0.6f, 0.2f);
+
+                MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
+                MatchVFXManager.Instance?.SpawnScorePopup(wpos, fishScore, burstColor);
+
+                totalScore += fishScore;
+                grid[f.gridX, f.gridY] = null;
+                f.PopAndDestroy();
+            }
+            ScoreManager.Instance.AddScore(totalScore);
+
+            yield return new WaitForSeconds(0.25f);
+        }
+
+        yield return new WaitForSeconds(0.2f);
+        IsBusy = false;
     }
 
     // Su anki dizilimde patlamayi bekleyen bir eslesme var mi?

@@ -87,7 +87,16 @@ public class LevelManager : MonoBehaviour
         OnMovesChanged?.Invoke(MovesRemaining);
         if (MovesRemaining <= 0) EndLevel();
     }
-
+    // Bonus sırasında moves sayacını görsel olarak azaltmak için
+    public void DecrementMoveForBonus()
+    {
+        if (MovesRemaining > 0)
+        {
+            MovesRemaining--;
+            OnMovesChanged?.Invoke(MovesRemaining);
+        }
+    }
+    
     public void ReportFishCollected(FishType fish, int amount = 1)
     {
         if (!IsLevelActive || CurrentLevel == null) return;
@@ -147,24 +156,40 @@ public class LevelManager : MonoBehaviour
 
     private void EndLevel()
     {
-        if (levelEnded) return;   // zaten bittiyse ikinci kez çalışma
+        if (levelEnded) return;
         levelEnded = true;
 
         IsLevelActive = false;
-        int score = ScoreManager.Instance.CurrentScore;
 
         if (AllGoalsComplete())
         {
-            int stars = CalculateStars(score);
-            SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
-            AudioManager.Instance?.PlayWin();
-            OnLevelWon?.Invoke(stars);
+            // Kazandı — önce kalan hamleleri bonusa çevir, sonra WinPanel
+            StartCoroutine(WinSequence());
         }
         else
         {
             AudioManager.Instance?.PlayLose();
             OnLevelLost?.Invoke();
         }
+    }
+
+    private System.Collections.IEnumerator WinSequence()
+    {
+        // Kalan hamleleri patlat (Candy Crush imza anı)
+        int leftover = MovesRemaining;
+        if (leftover > 0 && GridManager.Instance != null)
+        {
+            yield return new WaitForSeconds(0.3f);
+            yield return StartCoroutine(GridManager.Instance.ConvertMovesToBonus(leftover));
+            yield return new WaitForSeconds(0.3f);
+        }
+
+        // Bonus bittikten sonra gerçek skorla yıldızları hesapla
+        int score = ScoreManager.Instance.CurrentScore;
+        int stars = CalculateStars(score);
+        SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
+        AudioManager.Instance?.PlayWin();
+        OnLevelWon?.Invoke(stars);
     }
 
     private int CalculateStars(int score)

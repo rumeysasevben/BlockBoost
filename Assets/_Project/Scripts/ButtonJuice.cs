@@ -13,7 +13,6 @@ public class ButtonJuice : MonoBehaviour,
     [SerializeField] private float duration   = 0.12f;
 
     [Header("Click Pop")]
-    [SerializeField] private float popScale   = 1.12f;
     [SerializeField] private float popDuration = 0.18f;
 
     [Header("Options")]

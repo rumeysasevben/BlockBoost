@@ -15,11 +15,11 @@ MonoBehaviour:
   levelNumber: 1
   levelName: Level 1
   moveLimit: 25
-  targetScore: 10
-  twoStarScore: 2000
-  threeStarScore: 3500
-  gridWidth: 5
-  gridHeight: 5
+  targetScore: 800
+  twoStarScore: 1600
+  threeStarScore: 2800
+  gridWidth: 6
+  gridHeight: 6
   levelFishPool:
   - {fileID: 11400000, guid: 7e253c60dd14d014ca14e9d04925b679, type: 2}
   - {fileID: 11400000, guid: f5f0d7116dfab564ba742cb68fd4fc9e, type: 2}
@@ -29,42 +29,15 @@ MonoBehaviour:
     targetFish: 0
     targetObstacle: 0
     targetCollectible: 0
-    targetCount: 15
+    targetCount: 20
     currentCount: 15
-  - goalType: 1
-    targetFish: 0
-    targetObstacle: 0
-    targetCollectible: 0
-    targetCount: 2
-    currentCount: 0
-  - goalType: 2
-    targetFish: 0
-    targetObstacle: 0
-    targetCollectible: 0
-    targetCount: 2
-    currentCount: 2
-  - goalType: 1
-    targetFish: 0
-    targetObstacle: 3
-    targetCollectible: 0
-    targetCount: 1
-    currentCount: 1
-  - goalType: 3
-    targetFish: 0
-    targetObstacle: 3
-    targetCollectible: 0
-    targetCount: 2
-    currentCount: 2
   obstacles: []
-  randomObstacles:
-  - type: 3
-    count: 2
-  - type: 0
-    count: 2
+  randomObstacles: []
   collectibles: []
-  randomCollectibles:
-  - type: 0
-    count: 2
+  randomCollectibles: []
   nets: []
-  randomNetCount: 2
+  randomNetCount: 0
+  hammerCount: 1
+  shuffleCount: 1
+  rocketCount: 0
   backgroundTint: {r: 1, g: 1, b: 1, a: 1}

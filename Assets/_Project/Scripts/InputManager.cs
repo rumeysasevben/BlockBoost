@@ -157,8 +157,9 @@ public class InputManager : MonoBehaviour
         }
         else
         {
-            // Geçersiz swap — geri al
-            yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b));
+            // Geçersiz swap — geri al (swap sesi calmasin, invalid sesi calsin)
+            AudioManager.Instance?.PlayInvalidSwap();
+            yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b, 0.2f, false));
         }
 
         isSwapping = false;

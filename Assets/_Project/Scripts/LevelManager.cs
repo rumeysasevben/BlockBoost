@@ -14,6 +14,8 @@ public class LevelManager : MonoBehaviour
     public int MovesRemaining { get; private set; }
     public bool IsLevelActive { get; private set; }
 
+    private bool levelEnded = false;
+
     public event Action<LevelData> OnLevelLoaded;
     public event Action<int> OnMovesChanged;
     public event Action<LevelGoal> OnGoalProgress;
@@ -67,6 +69,7 @@ public class LevelManager : MonoBehaviour
         GridManager.Instance?.ResetForLevel(CurrentLevel);
         MovesRemaining = CurrentLevel.moveLimit;
         IsLevelActive = true;
+        levelEnded = false;   // yeni level, kilidi sıfırla
 
         foreach (var g in CurrentLevel.collectGoals) g.Reset();
         ScoreManager.Instance.ResetScore();
@@ -144,15 +147,24 @@ public class LevelManager : MonoBehaviour
 
     private void EndLevel()
     {
+        if (levelEnded) return;   // zaten bittiyse ikinci kez çalışma
+        levelEnded = true;
+
         IsLevelActive = false;
         int score = ScoreManager.Instance.CurrentScore;
+
         if (AllGoalsComplete())
         {
             int stars = CalculateStars(score);
             SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
+            AudioManager.Instance?.PlayWin();
             OnLevelWon?.Invoke(stars);
         }
-        else OnLevelLost?.Invoke();
+        else
+        {
+            AudioManager.Instance?.PlayLose();
+            OnLevelLost?.Invoke();
+        }
     }
 
     private int CalculateStars(int score)

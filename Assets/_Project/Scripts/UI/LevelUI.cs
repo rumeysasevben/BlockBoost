@@ -1,18 +1,25 @@
-using System.Text;
+using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using TMPro;
+using DG.Tweening;
 
 public class LevelUI : MonoBehaviour
 {
     [SerializeField] private TMP_Text levelText;
     [SerializeField] private TMP_Text movesText;
-    [SerializeField] private TMP_Text goalText;
 
-    [Header("HUD Stars")]
-    [SerializeField] private Image[] hudStars;
-    [SerializeField] private Sprite starFilled;
-    [SerializeField] private Sprite starEmpty;
+    [Header("Moves Warning")]
+    [Tooltip("Bu sayı ve altında hamle kalınca kırmızı olur")]
+    [SerializeField] private int criticalMoves = 5;
+    [SerializeField] private Color normalMovesColor = Color.white;
+    [SerializeField] private Color criticalMovesColor = new Color(0.9f, 0.2f, 0.2f);
+
+    [Header("Goals")]
+    [SerializeField] private Transform goalContainer;
+    [SerializeField] private GameObject goalItemPrefab;
+    [SerializeField] private GoalIconLibrary iconLibrary;
+
+    private readonly List<GoalItemUI> goalItems = new List<GoalItemUI>();
 
     private void Start()
     {
@@ -22,8 +29,6 @@ public class LevelUI : MonoBehaviour
             LevelManager.Instance.OnMovesChanged += OnMovesChanged;
             LevelManager.Instance.OnGoalProgress += OnGoalProgress;
         }
-        if (ScoreManager.Instance != null)
-            ScoreManager.Instance.OnScoreChanged += OnScoreChanged;
     }
 
     private void OnDestroy()
@@ -34,58 +39,70 @@ public class LevelUI : MonoBehaviour
             LevelManager.Instance.OnMovesChanged -= OnMovesChanged;
             LevelManager.Instance.OnGoalProgress -= OnGoalProgress;
         }
-        if (ScoreManager.Instance != null)
-            ScoreManager.Instance.OnScoreChanged -= OnScoreChanged;
     }
 
     private void OnLevelLoaded(LevelData level)
     {
         if (levelText) levelText.text = level.levelName.ToUpper();
-        RefreshGoalDisplay();
-        RefreshStars(0);
+        if (movesText) movesText.color = normalMovesColor;
+        BuildGoalItems(level);
     }
 
-    private void OnMovesChanged(int m) { if (movesText) movesText.text = $"Moves: {m}"; }
-    private void OnGoalProgress(LevelGoal g) => RefreshGoalDisplay();
-    private void OnScoreChanged(int s) => RefreshStars(s);
+    private void OnMovesChanged(int m)
+    {
+        if (!movesText) return;
 
-    private void RefreshGoalDisplay()
+        movesText.text = $"Moves: {m}";
+
+        if (m <= criticalMoves)
+        {
+            // kritik: kırmızı + zıpla
+            movesText.color = criticalMovesColor;
+            movesText.transform.DOKill();
+            movesText.transform.localScale = Vector3.one;
+            movesText.transform.DOPunchScale(Vector3.one * 0.25f, 0.3f, 8, 0.7f)
+                     .SetUpdate(true);
+        }
+        else
+        {
+            movesText.color = normalMovesColor;
+        }
+    }
+
+    private void OnGoalProgress(LevelGoal g) => RefreshGoals();
+
+    private void BuildGoalItems(LevelData level)
+    {
+        if (goalContainer == null || goalItemPrefab == null) return;
+
+        foreach (Transform child in goalContainer)
+            Destroy(child.gameObject);
+        goalItems.Clear();
+
+        if (level.collectGoals == null) return;
+
+        foreach (var goal in level.collectGoals)
+        {
+            GameObject obj = Instantiate(goalItemPrefab, goalContainer);
+            var item = obj.GetComponent<GoalItemUI>();
+            if (item == null) continue;
+
+            Sprite icon = iconLibrary != null ? iconLibrary.GetIcon(goal) : null;
+            item.Setup(icon, goal.currentCount, goal.targetCount);
+            goalItems.Add(item);
+        }
+    }
+
+    private void RefreshGoals()
     {
         var level = LevelManager.Instance?.CurrentLevel;
-        if (level == null || goalText == null) return;
-        if (level.collectGoals == null || level.collectGoals.Count == 0) { goalText.text = ""; return; }
+        if (level == null || level.collectGoals == null) return;
 
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < level.collectGoals.Count; i++)
+        int count = Mathf.Min(goalItems.Count, level.collectGoals.Count);
+        for (int i = 0; i < count; i++)
         {
             var g = level.collectGoals[i];
-            string label;
-            switch (g.goalType)
-            {
-                case GoalType.CollectFish:        label = g.targetFish.ToString(); break;
-                case GoalType.ClearObstacle:      label = g.targetObstacle.ToString(); break;
-                case GoalType.DeliverCollectible: label = g.targetCollectible.ToString(); break;
-                case GoalType.ClearNet:           label = "Net"; break;
-                default: label = "?"; break;
-            }
-            string status = g.IsComplete ? "<color=#33FF66>OK</color>" : $"{g.currentCount}/{g.targetCount}";
-            sb.Append($"{label}: {status}");
-            if (i < level.collectGoals.Count - 1) sb.Append("   ");
+            goalItems[i].Refresh(g.currentCount, g.targetCount);
         }
-        goalText.text = sb.ToString();
-    }
-
-    private void RefreshStars(int score)
-    {
-        var level = LevelManager.Instance?.CurrentLevel;
-        if (level == null || hudStars == null || hudStars.Length == 0) return;
-
-        int stars = 0;
-        if (score >= level.threeStarScore) stars = 3;
-        else if (score >= level.twoStarScore) stars = 2;
-        else if (score >= level.targetScore) stars = 1;
-
-        for (int i = 0; i < hudStars.Length; i++)
-            hudStars[i].sprite = (i < stars) ? starFilled : starEmpty;
     }
 }

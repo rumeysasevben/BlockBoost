@@ -109,10 +109,10 @@ MonoBehaviour:
   gridX: 0
   gridY: 0
   specialType: 0
-  bombSprite: {fileID: 21300000, guid: e0437173550bdc64bbb95b8bb5edf32d, type: 3}
-  colorBombSprite: {fileID: -7786371885269461310, guid: 4b6b4aa8dd05ace448ff16941b0c0852, type: 3}
-  rocketSprite: {fileID: -666232944909175049, guid: 6f979a0e4f6280640a507f2196e2207c, type: 3}
-  targetCellSize: 0.8
+  bombSprite: {fileID: -7500467377468755493, guid: f3c2ca885020bdf439b75be6ab9f7e57, type: 3}
+  colorBombSprite: {fileID: 3896771487470459701, guid: 5521542e76ccb2f4a9b959f5de3e873e, type: 3}
+  rocketSprite: {fileID: 21300000, guid: 4889b44a61ecf5547b6af42706379eff, type: 3}
+  fillRatio: 0.85
 --- !u!61 &4718665992264860396
 BoxCollider2D:
   m_ObjectHideFlags: 0

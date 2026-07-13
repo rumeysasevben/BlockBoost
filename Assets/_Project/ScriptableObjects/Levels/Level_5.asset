@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LevelData
   levelNumber: 5
   levelName: Level 5
-  moveLimit: 15
-  targetScore: 3000
-  twoStarScore: 7000
-  threeStarScore: 12000
+  moveLimit: 18
+  targetScore: 2500
+  twoStarScore: 5000
+  threeStarScore: 8000
   gridWidth: 8
   gridHeight: 8
   levelFishPool:
@@ -28,27 +28,39 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 734bced906c79314e98efbbe54a96cb0, type: 2}
   - {fileID: 11400000, guid: ca3d7a3dded085c4bba0571aefbf48f8, type: 2}
   collectGoals:
-  - goalType: 0
+  - goalType: 1
     targetFish: 1
-    targetObstacle: 0
-    targetCount: 30
-    currentCount: 0
-  - goalType: 0
+    targetObstacle: 3
+    targetCollectible: 0
+    targetCount: 3
+    currentCount: 3
+  - goalType: 1
     targetFish: 2
-    targetObstacle: 0
-    targetCount: 25
-    currentCount: 0
+    targetObstacle: 1
+    targetCollectible: 0
+    targetCount: 2
+    currentCount: 2
   - goalType: 0
-    targetFish: 3
+    targetFish: 5
     targetObstacle: 0
+    targetCollectible: 0
     targetCount: 20
-    currentCount: 0
+    currentCount: 12
   obstacles: []
   randomObstacles:
-  - type: 0
+  - type: 2
+    count: 3
+  - type: 3
     count: 3
   - type: 1
-    count: 3
-  - type: 2
     count: 2
+  collectibles: []
+  randomCollectibles:
+  - type: 1
+    count: 3
+  nets: []
+  randomNetCount: 0
+  hammerCount: 2
+  shuffleCount: 2
+  rocketCount: 2
   backgroundTint: {r: 1, g: 1, b: 1, a: 1}

@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dbb2498075c03f841926d458b34e2c9f, type: 3}
+  m_Name: GoalIconLibrary
+  m_EditorClassIdentifier: Assembly-CSharp::GoalIconLibrary
+  fishIcons:
+  - type: 0
+    sprite: {fileID: 21300000, guid: a25cce62ee65f324494687b790d82b85, type: 3}
+  - type: 1
+    sprite: {fileID: 21300000, guid: b635b9cfc9dbfbb4b8708e339ac6807b, type: 3}
+  - type: 2
+    sprite: {fileID: 21300000, guid: c51792ce9a4173246b65d3472944f756, type: 3}
+  - type: 3
+    sprite: {fileID: 21300000, guid: 61f8ce80e4cd7df4e93a0f6dc2a4ceab, type: 3}
+  - type: 4
+    sprite: {fileID: 21300000, guid: 29e0996098fb2914db7b5a46446b5680, type: 3}
+  - type: 5
+    sprite: {fileID: 21300000, guid: 997d8b7d9675fe045b3890bd4bed2123, type: 3}
+  obstacleIcons:
+  - type: 0
+    sprite: {fileID: -6866832159502873631, guid: fd73fafa1d84e31488c6b54039310cc9, type: 3}
+  - type: 1
+    sprite: {fileID: 3273187744099624924, guid: 9ffe4ccbba2636b44aae140179303037, type: 3}
+  - type: 2
+    sprite: {fileID: -856085545168688419, guid: 045904ae0f1db504e859cf205220b0b7, type: 3}
+  - type: 3
+    sprite: {fileID: -1516043142803438348, guid: ca9fb69cabb70aa4789eec4b4888987f, type: 3}
+  collectibleIcons:
+  - type: 0
+    sprite: {fileID: 21300000, guid: 3c6bdfb70672d534a9d5e92097841276, type: 3}
+  - type: 1
+    sprite: {fileID: 21300000, guid: 06a339c4982f34c45b001760b2573b01, type: 3}
+  netIcon: {fileID: 21300000, guid: 0ea7f4a25fc79524aba472e0135291b1, type: 3}

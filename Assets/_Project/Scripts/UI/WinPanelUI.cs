@@ -22,10 +22,6 @@ public class WinPanelUI : MonoBehaviour
     [SerializeField] private Button nextButton;
     [SerializeField] private Button restartButton;
 
-    [Header("Audio (opsiyonel)")]
-    [SerializeField] private AudioClip winSound;
-    [SerializeField] private AudioClip starPopSound;
-
     private void Awake()
     {
         if (panelRoot != null) panelRoot.SetActive(false);
@@ -36,7 +32,10 @@ public class WinPanelUI : MonoBehaviour
     private void Start()
     {
         if (LevelManager.Instance != null)
+        {
+            LevelManager.Instance.OnLevelWon -= Show;
             LevelManager.Instance.OnLevelWon += Show;
+        }
     }
 
     private void OnDestroy()
@@ -47,8 +46,6 @@ public class WinPanelUI : MonoBehaviour
 
     public void Show(int stars)
     {
-        Debug.Log($"<color=cyan>>>> WinPanel.Show() çağrıldı! Stars: {stars}</color>");
-
         if (panelRoot == null) return;
 
         panelRoot.SetActive(true);
@@ -73,10 +70,6 @@ public class WinPanelUI : MonoBehaviour
 
         // Yıldız pop animasyonu (gecikmeli)
         StartCoroutine(AnimateStars(stars));
-
-        // Win sesi
-        //if (winSound != null && AudioManager.Instance != null)
-        //    AudioManager.Instance.PlaySFX(winSound);
     }
 
     private IEnumerator AnimateStars(int starsEarned)
@@ -91,8 +84,8 @@ public class WinPanelUI : MonoBehaviour
             s.transform.DOScale(1.3f, 0.25f).SetEase(Ease.OutBack)
                 .OnComplete(() => s.transform.DOScale(1f, 0.15f));
 
-            //if (starPopSound != null && AudioManager.Instance != null)
-            //    AudioManager.Instance.PlaySFX(starPopSound);
+            if (AudioManager.Instance != null)
+                AudioManager.Instance.PlayStarPop(1f + i * 0.15f);
 
             yield return new WaitForSeconds(0.3f);
         }

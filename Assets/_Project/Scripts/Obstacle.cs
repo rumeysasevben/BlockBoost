@@ -19,6 +19,12 @@ public class Obstacle : MonoBehaviour
     public float cellSize = 1f; // GridManager tarafindan Initialize'da otomatik set edilir
     [Range(0.5f, 1f)] public float fillRatio = 0.9f;
 
+    [Header("Per-Type Fill Ayari")]
+    [Range(0.4f, 1f)] public float iceFill     = 0.70f;
+    [Range(0.4f, 1f)] public float cageFill    = 0.95f;
+    [Range(0.4f, 1f)] public float coralFill   = 0.90f;
+    [Range(0.4f, 1f)] public float seaweedFill = 0.90f;
+
     [Header("State")]
     public int currentHP;
 
@@ -110,13 +116,31 @@ public class Obstacle : MonoBehaviour
         sr.color = color;
     }
 
+    // Sprite'in kendi ic bosluguna gore per-type ince ayar
+    private float GetTypeFillMultiplier()
+    {
+        switch (type)
+        {
+            case ObstacleType.Ice:     return iceFill;
+            case ObstacleType.Cage:    return cageFill;
+            case ObstacleType.Coral:   return coralFill;
+            case ObstacleType.Seaweed: return seaweedFill;
+            default: return 1f;
+        }
+    }
+
     // Sprite'in piksel boyutu ne olursa olsun, orani bozmadan tek hucreye sigdirir
     private void FitSpriteToCell()
     {
         Vector2 nativeSize = sr.sprite.bounds.size;
+        if (nativeSize.x <= 0f || nativeSize.y <= 0f) return;
+
         float scaleX = cellSize / nativeSize.x;
         float scaleY = cellSize / nativeSize.y;
-        float uniformScale = Mathf.Min(scaleX, scaleY) * fillRatio;
+
+        float ratio = fillRatio * GetTypeFillMultiplier();
+        float uniformScale = Mathf.Min(scaleX, scaleY) * ratio;
+
         baseScale = new Vector3(uniformScale, uniformScale, 1f);
         transform.localScale = baseScale;
     }

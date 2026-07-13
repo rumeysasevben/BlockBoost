@@ -18,7 +18,7 @@ public class Fish : MonoBehaviour
     [Header("Special Sprites")]
     public Sprite bombSprite;
     public Sprite colorBombSprite;
-    public Sprite rocketSprite; // RocketH; RocketV icin 90 derece dondurulur
+    public Sprite rocketSprite; // Sprite dikey cizili. RocketH icin 90 derece yatirilir, RocketV dik kalir
 
     [Header("Sizing")]
     [Range(0.5f, 1f)] public float fillRatio = 0.85f; // Hucrenin ne kadarini kaplasin
@@ -101,12 +101,13 @@ public class Fish : MonoBehaviour
         {
             case SpecialType.RocketH:
                 chosen = rocketSprite;
+                rotate = true; // sprite dikey cizili, yatay temizlik icin 90 dereceye yatir
                 if (chosen == null) sr.color = new Color(1f, 0.85f, 0.2f);
                 break;
 
             case SpecialType.RocketV:
                 chosen = rocketSprite;
-                rotate = true;
+                // sprite zaten dikey cizili, dik kalsin (dondurme)
                 if (chosen == null) sr.color = new Color(0.2f, 0.85f, 1f);
                 break;
 
@@ -160,5 +161,19 @@ public class Fish : MonoBehaviour
     {
         transform.DOKill();
         transform.DOMove(worldPos, duration).SetEase(Ease.OutQuad);
+    }
+    // Idle sallanma — hareketsizken hafifçe döner (canlı görünüm)
+    public void PlayIdle()
+    {
+        // special taşları veya hareket halindekileri sallamayalım
+        if (IsSpecial) return;
+        transform.DOKill();
+        transform.localScale = baseScale;
+        transform.rotation = Quaternion.identity;
+
+        Sequence seq = DOTween.Sequence();
+        seq.Append(transform.DORotate(new Vector3(0, 0, 6f), 0.5f).SetEase(Ease.InOutSine));
+        seq.Append(transform.DORotate(new Vector3(0, 0, -6f), 1f).SetEase(Ease.InOutSine));
+        seq.Append(transform.DORotate(Vector3.zero, 0.5f).SetEase(Ease.InOutSine));
     }
 }

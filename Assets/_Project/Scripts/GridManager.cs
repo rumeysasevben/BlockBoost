@@ -26,6 +26,9 @@ public class GridManager : MonoBehaviour
     public bool IsBusy { get; set; }
 
     private Fish[,] grid;
+    private float idleTimer = 0f;
+    private const float idleDelay = 3.5f;
+    private bool idlePlaying = false;
     private Dictionary<Vector2Int, Obstacle> obstacles = new Dictionary<Vector2Int, Obstacle>();
     private Dictionary<Vector2Int, Collectible> collectibles = new Dictionary<Vector2Int, Collectible>();
     private Dictionary<Vector2Int, FishingNet> nets = new Dictionary<Vector2Int, FishingNet>();
@@ -37,6 +40,40 @@ public class GridManager : MonoBehaviour
     }
 
     private void Start() { }
+
+    private void Update()
+    {
+        // Oyun meşgulse (swap/patlama/düşme) idle sayacı çalışmaz
+        if (IsBusy || grid == null)
+        {
+            idleTimer = 0f;
+            return;
+        }
+
+        idleTimer += Time.deltaTime;
+        if (idleTimer >= idleDelay)
+        {
+            idleTimer = 0f;   // sayacı sıfırla, tekrar saymaya başlasın
+            PlayIdleWave();
+        }
+    }
+
+    // Tüm balıkları hafif gecikmeli, dalga gibi sallar
+    private void PlayIdleWave()
+    {
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+            {
+                Fish f = grid[x, y];
+                if (f == null) continue;
+                // hafif gecikme: soldan sağa dalga etkisi
+                float delay = (x + y) * 0.05f;
+                DOTween.Sequence().AppendInterval(delay).AppendCallback(() =>
+                {
+                    if (f != null) f.PlayIdle();
+                });
+            }
+    }
 
     private void SpawnFishAt(int x, int y)
     {
@@ -117,8 +154,10 @@ public class GridManager : MonoBehaviour
         b.transform.position = GridToWorldPosition(ax, ay);
     }
 
-    public IEnumerator SwapFishAnimated(Fish a, Fish b, float duration = 0.2f)
+    public IEnumerator SwapFishAnimated(Fish a, Fish b, float duration = 0.2f, bool playSound = true)
     {
+        idleTimer = 0f;
+        idlePlaying = false;
         if (HasNetAt(a.gridX, a.gridY) || HasNetAt(b.gridX, b.gridY)) yield break;
         int ax = a.gridX, ay = a.gridY;
         int bx = b.gridX, by = b.gridY;
@@ -126,6 +165,9 @@ public class GridManager : MonoBehaviour
         grid[bx, by] = a;
         a.SetGridPosition(bx, by);
         b.SetGridPosition(ax, ay);
+
+        if (playSound) AudioManager.Instance?.PlaySwap();
+
         a.MoveTo(GridToWorldPosition(bx, by), duration);
         b.MoveTo(GridToWorldPosition(ax, ay), duration);
         yield return new WaitForSeconds(duration);
@@ -169,6 +211,7 @@ public class GridManager : MonoBehaviour
             {
                 if (fish.IsSpecial || promotedSpecials.Contains(fish)) continue;
                 fish.MakeSpecial(SpecialType.Bomb);
+                AudioManager.Instance?.PlaySpecialCreate();
                 promotedSpecials.Add(fish);
             }
 
@@ -192,6 +235,7 @@ public class GridManager : MonoBehaviour
                 if (promoter == null || promotedSpecials.Contains(promoter)) continue;
                 if (promoter.IsSpecial) continue;
                 promoter.MakeSpecial(specialFor);
+                AudioManager.Instance?.PlaySpecialCreate();
                 promotedSpecials.Add(promoter);
             }
 
@@ -243,11 +287,16 @@ public class GridManager : MonoBehaviour
                 f.PopAndDestroy();
             }
             ScoreManager.Instance.AddScore(totalScore);
+            AudioManager.Instance?.PlayMatch(comboLevel);
             DamageAdjacentObstaclesAndNets(clearedPositions);
 
             // Camera shake — büyük match veya combo'da
             if (comboLevel >= 2 || toClear.Count >= 6)
-                CameraShake.Instance?.Shake(0.2f + comboLevel * 0.05f, 0.08f + comboLevel * 0.02f);
+                CameraShake.Instance?.Shake(0.15f + comboLevel * 0.02f, 0.04f + comboLevel * 0.008f);
+
+            // Combo feedback yazisi (Fin-tastic! / Splash-tastic! / ...) — grid merkezinde
+            if (comboLevel >= 2)
+                MatchVFXManager.Instance?.SpawnComboText(comboLevel);
 
             yield return new WaitForSeconds(0.3f);
             yield return StartCoroutine(FillBoard());
@@ -267,6 +316,8 @@ public class GridManager : MonoBehaviour
     public IEnumerator HammerCellAt(int x, int y)
     {
         IsBusy = true;
+        AudioManager.Instance?.PlayHammer();
+
         Fish f = GetFishAt(x, y);
         if (f != null)
         {
@@ -275,7 +326,7 @@ public class GridManager : MonoBehaviour
 
             MatchVFXManager.Instance?.SpawnBurst(wpos, burstColor);
             MatchVFXManager.Instance?.SpawnScorePopup(wpos, f.data.scoreValue, burstColor);
-            CameraShake.Instance?.Shake(0.2f, 0.08f);
+            CameraShake.Instance?.Shake(0.15f, 0.04f);
 
             List<Vector2Int> cleared = new List<Vector2Int> { new Vector2Int(x, y) };
             ScoreManager.Instance.AddScore(f.data.scoreValue);
@@ -294,6 +345,11 @@ public class GridManager : MonoBehaviour
     public IEnumerator RocketCellAt(int x, int y)
     {
         IsBusy = true;
+
+        // Booster roket feedback yazisi
+        MatchVFXManager.Instance?.SpawnSpecialText(SpecialType.RocketH);
+        AudioManager.Instance?.PlaySpecial(SpecialType.RocketH);
+
         HashSet<Fish> toClear = new HashSet<Fish>();
         for (int i = 0; i < width; i++)  { Fish f = GetFishAt(i, y); if (f != null) toClear.Add(f); }
         for (int i = 0; i < height; i++) { Fish f = GetFishAt(x, i); if (f != null) toClear.Add(f); }
@@ -334,7 +390,7 @@ public class GridManager : MonoBehaviour
         ScoreManager.Instance.AddScore(totalScore);
         DamageAdjacentObstaclesAndNets(clearedPositions);
 
-        CameraShake.Instance?.Shake(0.3f, 0.15f);
+        CameraShake.Instance?.Shake(0.2f, 0.06f);
 
         yield return new WaitForSeconds(0.4f);
         yield return StartCoroutine(FillBoard());
@@ -348,6 +404,10 @@ public class GridManager : MonoBehaviour
     public IEnumerator ActivateSpecialAt(Fish special)
     {
         IsBusy = true;
+
+        // Special feedback yazisi (Torpedo! / Boom-arine! / Reef Wrecker!)
+        MatchVFXManager.Instance?.SpawnSpecialText(special.specialType);
+        AudioManager.Instance?.PlaySpecial(special.specialType);
 
         HashSet<Fish> toClear = new HashSet<Fish>();
         toClear.Add(special);
@@ -394,7 +454,7 @@ public class GridManager : MonoBehaviour
         ScoreManager.Instance.AddScore(totalScore);
         DamageAdjacentObstaclesAndNets(clearedPositions);
 
-        CameraShake.Instance?.Shake(0.3f, 0.15f);
+        CameraShake.Instance?.Shake(0.2f, 0.06f);
 
         yield return new WaitForSeconds(0.4f);
         yield return StartCoroutine(FillBoard());
@@ -543,24 +603,82 @@ public class GridManager : MonoBehaviour
     private IEnumerator DeliverCollectiblesAtBottom()
     {
         bool anyDelivered = false;
+        int keysDelivered = 0;
+
         List<Vector2Int> toDeliver = new List<Vector2Int>();
         for (int x = 0; x < width; x++)
         {
             Vector2Int key = new Vector2Int(x, 0);
             if (collectibles.ContainsKey(key)) toDeliver.Add(key);
         }
+
         foreach (var key in toDeliver)
         {
             Collectible c = collectibles[key];
             collectibles.Remove(key);
             LevelManager.Instance?.ReportCollectibleDelivered(c.type, 1);
+
+            if (c.type == CollectibleType.Key) keysDelivered++;
+
+            AudioManager.Instance?.PlayCollectibleDeliver();
             c.DeliverAndDestroy();
             anyDelivered = true;
         }
+
+        // Teslim edilen her anahtar rastgele bir kafesi acar
+        for (int i = 0; i < keysDelivered; i++)
+        {
+            yield return new WaitForSeconds(0.25f);
+            UnlockRandomCage();
+        }
+
         if (anyDelivered)
         {
             yield return new WaitForSeconds(0.5f);
             yield return StartCoroutine(FillBoard());
+        }
+    }
+
+    // Rastgele bir Cage'i kirar; icindeki baligi serbest birakir.
+    private void UnlockRandomCage()
+    {
+        List<Vector2Int> cages = new List<Vector2Int>();
+        foreach (var kvp in obstacles)
+            if (kvp.Value != null && kvp.Value.type == ObstacleType.Cage)
+                cages.Add(kvp.Key);
+
+        if (cages.Count == 0) return;
+
+        Vector2Int target = cages[Random.Range(0, cages.Count)];
+        Obstacle cage = obstacles[target];
+
+        // HP ne olursa olsun tamamen kir
+        obstacles.Remove(target);
+        LevelManager.Instance?.ReportObstacleCleared(ObstacleType.Cage, 1);
+        AudioManager.Instance?.PlayObstacleBreak(ObstacleType.Cage);
+
+        Vector3 wpos = GridToWorldPosition(target.x, target.y);
+        MatchVFXManager.Instance?.SpawnBurst(wpos, new Color(1f, 0.9f, 0.3f));
+        CameraShake.Instance?.Shake(0.15f, 0.04f);
+
+        if (cage != null)
+        {
+            cage.transform.DOKill();
+            Vector3 s = cage.transform.localScale;
+            Sequence seq = DOTween.Sequence();
+            seq.Append(cage.transform.DOScale(s * 1.4f, 0.15f));
+            seq.Append(cage.transform.DOScale(0f, 0.25f).SetEase(Ease.InBack));
+            seq.OnComplete(() => { if (cage != null) Destroy(cage.gameObject); });
+        }
+
+        // Kafesin yerine balik dogur
+        SpawnFishAt(target.x, target.y);
+        Fish spawned = GetFishAt(target.x, target.y);
+        if (spawned != null)
+        {
+            Vector3 correctScale = spawned.transform.localScale;
+            spawned.transform.localScale = Vector3.zero;
+            spawned.transform.DOScale(correctScale, 0.3f).SetEase(Ease.OutBack).SetDelay(0.2f);
         }
     }
 
@@ -617,6 +735,10 @@ public class GridManager : MonoBehaviour
         toClear.Add(a); toClear.Add(b);
         int ax = a.gridX, ay = a.gridY;
         SpecialType ta = a.specialType, tb = b.specialType;
+
+        // Iki special birlesti — en guclu feedback
+        MatchVFXManager.Instance?.SpawnKrakenText();
+        AudioManager.Instance?.PlayKraken();
 
         if (ta == SpecialType.ColorBomb && tb == SpecialType.ColorBomb)
         {
@@ -700,7 +822,7 @@ public class GridManager : MonoBehaviour
         ScoreManager.Instance.AddScore(totalScore);
         DamageAdjacentObstaclesAndNets(clearedPositions);
 
-        CameraShake.Instance?.Shake(0.3f, 0.15f);
+        CameraShake.Instance?.Shake(0.2f, 0.06f);
 
         yield return new WaitForSeconds(0.4f);
         yield return StartCoroutine(FillBoard());
@@ -713,6 +835,11 @@ public class GridManager : MonoBehaviour
     public IEnumerator ActivateColorBombOnType(Fish colorBomb, FishType target)
     {
         IsBusy = true;
+
+        // ColorBomb feedback yazisi
+        MatchVFXManager.Instance?.SpawnSpecialText(SpecialType.ColorBomb);
+        AudioManager.Instance?.PlaySpecial(SpecialType.ColorBomb);
+
         HashSet<Fish> toClear = new HashSet<Fish>();
         toClear.Add(colorBomb);
         bool hasTarget = false;
@@ -762,7 +889,7 @@ public class GridManager : MonoBehaviour
         ScoreManager.Instance.AddScore(totalScore);
         DamageAdjacentObstaclesAndNets(clearedPositions);
 
-        CameraShake.Instance?.Shake(0.3f, 0.13f);
+        CameraShake.Instance?.Shake(0.2f, 0.05f);
 
         yield return new WaitForSeconds(0.3f);
         yield return StartCoroutine(FillBoard());
@@ -804,6 +931,8 @@ public class GridManager : MonoBehaviour
 
     public IEnumerator ShuffleGrid()
     {
+        AudioManager.Instance?.PlayShuffle();
+
         List<Fish> allFish = new List<Fish>();
         for (int x = 0; x < width; x++)
             for (int y = 0; y < height; y++)
@@ -829,8 +958,24 @@ public class GridManager : MonoBehaviour
                     }
             yield return new WaitForSeconds(0.5f);
             attempts++;
+
+            // Geçerli hamle varsa dur — hazır match olsa da olur, aşağıda patlatacağız
             if (HasAnyValidMove()) break;
         }
+
+        // Shuffle sonrası tesadüfen match oluştuysa otomatik patlat
+        if (HasAnyMatchNow())
+            yield return StartCoroutine(ProcessMatches());
+    }
+
+    // Su anki dizilimde patlamayi bekleyen bir eslesme var mi?
+    private bool HasAnyMatchNow()
+    {
+        for (int x = 0; x < width; x++)
+            for (int y = 0; y < height; y++)
+                if (grid[x, y] != null && MatchFinder.Instance.HasMatchAt(x, y))
+                    return true;
+        return false;
     }
 
     // ─── LEVEL RESET ─────────────────────────
@@ -937,6 +1082,8 @@ public class GridManager : MonoBehaviour
         {
             obstacles.Remove(key);
             LevelManager.Instance?.ReportObstacleCleared(brokenType, 1);
+            AudioManager.Instance?.PlayObstacleBreak(brokenType);
+
             if (brokenType == ObstacleType.Cage)
             {
                 SpawnFishAt(x, y);
@@ -964,6 +1111,7 @@ public class GridManager : MonoBehaviour
         {
             nets.Remove(key);
             LevelManager.Instance?.ReportNetCleared(1);
+            AudioManager.Instance?.PlayNetBreak();
         }
     }
 

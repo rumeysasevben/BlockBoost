@@ -63,7 +63,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 539187769330359728, guid: b986691a8307cd24490ac4b549d59c85, type: 2}
+  - {fileID: 2766413514448722539, guid: 2def173462744b847be55d86cc8a12d7, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -109,8 +109,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: +50
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: b986691a8307cd24490ac4b549d59c85, type: 2}
-  m_sharedMaterial: {fileID: 539187769330359728, guid: b986691a8307cd24490ac4b549d59c85, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 2def173462744b847be55d86cc8a12d7, type: 2}
+  m_sharedMaterial: {fileID: 2766413514448722539, guid: 2def173462744b847be55d86cc8a12d7, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -196,3 +196,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ScorePopup
   floatHeight: 1.2
   lifetime: 0.9
+  comboFloatHeight: 0
+  comboLifetime: 1.8
+  comboScale: 1.6
+  comboSortingOrder: 50

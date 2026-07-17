@@ -1058,31 +1058,30 @@ public class GridManager : MonoBehaviour
             yield return new WaitForSeconds(0.2f);
         }
 
-        yield return new WaitForSeconds(0.3f);
+        yield return new WaitForSeconds(0.4f);
 
-        // ── FAZ 2: Patlatma ──
+        // ── FAZ 2: Sırayla patlatma ──
+        // Her special'ı TEK TEK, sadece kendi etki alanıyla patlat.
+        // Diğer special'lara zincirleme dokunma → hepsi sırayla patlar, boşta kalmaz.
+        // Henüz patlamamış tüm converted balıkları takip et (kendi sırası gelene kadar dokunma)
+        HashSet<Fish> notYetExploded = new HashSet<Fish>(converted);
+
         foreach (Fish special in converted)
         {
-            // balık faz 1'den sonra hâlâ tahtada mı? (başka patlama yok ettiyse atla)
             if (special == null) continue;
             if (special.gridX < 0 || special.gridX >= width || special.gridY < 0 || special.gridY >= height) continue;
             if (grid[special.gridX, special.gridY] != special) continue;
 
-            // bu special + etki alanı + zincir
-            HashSet<Fish> toClear = new HashSet<Fish>();
-            Queue<Fish> queue = new Queue<Fish>();
-            queue.Enqueue(special);
+            notYetExploded.Remove(special);  // bu bomba artık patlıyor
 
-            while (queue.Count > 0)
+            // Sadece bu special'ın kendi etki alanı, henüz sırası gelmemiş diğer bombalar HARİÇ
+            HashSet<Fish> toClear = new HashSet<Fish>();
+            toClear.Add(special);
+            foreach (var a in GetActivationArea(special))
             {
-                Fish f = queue.Dequeue();
-                if (f == null || toClear.Contains(f)) continue;
-                toClear.Add(f);
-                if (f.IsSpecial)
-                {
-                    foreach (var a in GetActivationArea(f))
-                        if (a != null && !toClear.Contains(a)) queue.Enqueue(a);
-                }
+                if (a == null) continue;
+                if (notYetExploded.Contains(a)) continue;  // sırası gelmemiş bombayı atla
+                toClear.Add(a);
             }
 
             AudioManager.Instance?.PlaySpecial(special.specialType);
@@ -1093,7 +1092,7 @@ public class GridManager : MonoBehaviour
             {
                 if (f == null) continue;
                 if (f.gridX < 0 || f.gridX >= width || f.gridY < 0 || f.gridY >= height) continue;
-                if (grid[f.gridX, f.gridY] != f) continue;  // zaten yok edilmişse atla
+                if (grid[f.gridX, f.gridY] != f) continue;
 
                 Vector3 wpos = GridToWorldPosition(f.gridX, f.gridY);
                 int fishScore = f.data.scoreValue * 2;
@@ -1108,10 +1107,15 @@ public class GridManager : MonoBehaviour
             }
             ScoreManager.Instance.AddScore(totalScore);
 
-            yield return new WaitForSeconds(0.25f);
+            // Patlama görünsün
+            yield return new WaitForSeconds(0.35f);
+
+            // Boşalan yerleri doldur ki sonraki special boş ekranda kalmasın
+            yield return StartCoroutine(FillBoard());
+            yield return new WaitForSeconds(0.2f);
         }
 
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(0.3f);
         IsBusy = false;
     }
 

@@ -1747,12 +1747,10 @@ MonoBehaviour:
   burstSpreadRadius: 0.6
   comboColor: {r: 1, g: 0.85, b: 0.2, a: 1}
   rocketColor: {r: 1, g: 0.6, b: 0.2, a: 1}
-  bombColor: {r: 0.47317284, g: 0.1706016, b: 0.554717, a: 1}
-  colorBombColor: {r: 0.7735849, g: 0.3079743, b: 0.5392579, a: 1}
+  bombColor: {r: 0.85, g: 0.3, b: 1, a: 1}
+  colorBombColor: {r: 1, g: 0.4, b: 0.7, a: 1}
   krakenColor: {r: 0.3, g: 0.9, b: 1, a: 1}
   goalCompleteColor: {r: 0.3, g: 1, b: 0.5, a: 1}
-  goalCompleteBanner: {fileID: 21300000, guid: 1a6c80b299a424f40a2c69a982314fd3, type: 3}
-  goalBannerWidth: 4.5
   centerOffset: {x: 0, y: 0}
 --- !u!1 &597900602
 GameObject:

@@ -80,6 +80,48 @@ public class ScorePopup : MonoBehaviour
         seq.OnComplete(() => Destroy(gameObject));
     }
 
+
+    /// <summary>
+    /// Büyük, şaşaalı başlık yazısı (GOAL COMPLETE! gibi) — uzun süre ekranda kalır.
+    /// </summary>
+    public void ShowBigTitle(string message, Color color, Vector3 worldPos)
+    {
+        if (txt == null) txt = GetComponent<TMP_Text>();
+
+        RectTransform rt = transform as RectTransform;
+        if (rt != null)
+        {
+            rt.anchorMin = new Vector2(0.5f, 0.5f);
+            rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot     = new Vector2(0.5f, 0.5f);
+        }
+
+        txt.text = message;
+        txt.color = color;
+        txt.alignment = TextAlignmentOptions.Center;
+
+        MeshRenderer mr = GetComponent<MeshRenderer>();
+        if (mr != null) mr.sortingOrder = comboSortingOrder + 10; // her şeyin üstünde
+
+        transform.position = worldPos;
+        transform.localScale = Vector3.zero;
+
+        float bigScale = comboScale * 0.85f;      // normal combodan büyük
+        float holdTime = 1.6f;                    // parlak halde ne kadar kalsın
+        float fadeTime = 0.6f;
+
+        Sequence seq = DOTween.Sequence();
+        // Büyük ve şaşaalı giriş: overshoot + çift punch
+        seq.Append(transform.DOScale(bigScale, 0.4f).SetEase(Ease.OutBack));
+        seq.Append(transform.DOPunchScale(Vector3.one * 0.15f, 0.3f, 6, 0.6f));
+        // Parlak halde beklesin, okunsun
+        seq.AppendInterval(holdTime);
+        // Yumuşak çıkış
+        seq.Append(txt.DOFade(0f, fadeTime));
+        seq.Join(transform.DOScale(bigScale * 1.1f, fadeTime).SetEase(Ease.OutQuad));
+        seq.OnComplete(() => Destroy(gameObject));
+    }
+
     /// <summary>
     /// Geriye donuk uyumluluk: mevcut pozisyonda goster.
     /// </summary>

@@ -34,6 +34,13 @@ public class MatchVFXManager : MonoBehaviour
     public Color bombColor       = new Color(0.85f, 0.3f, 1f);   // mor
     public Color colorBombColor  = new Color(1f, 0.4f, 0.7f);    // pembe
     public Color krakenColor     = new Color(0.3f, 0.9f, 1f);    // parlak mavi
+    public Color goalCompleteColor = new Color(0.3f, 1f, 0.5f);  // yesilimsi
+
+    [Header("Goal Complete Banner")]
+    [Tooltip("Claude Design'dan gelen GOAL COMPLETE! banner PNG'si")]
+    public Sprite goalCompleteBanner;
+    [Tooltip("Banner'in ekrandaki maksimum genisligi (dunya birimi)")]
+    public float goalBannerWidth = 4.5f;
 
     private void Awake()
     {
@@ -45,32 +52,19 @@ public class MatchVFXManager : MonoBehaviour
     [Tooltip("Feedback yazisi/efektinin grid merkezine gore kaymasi")]
     public Vector2 centerOffset = Vector2.zero;
 
-    /// <summary>
-    /// Grid'in gercek geometrik merkezi (yarim hucre kaymasi olmadan).
-    /// GridToWorldPosition formulu merkezde tam 0 verir; gridParent kaydirilmissa
-    /// onun pozisyonu da eklenir.
-    /// </summary>
     private Vector3 GetGridCenter()
     {
         if (GridManager.Instance == null) return Vector3.zero;
         GridManager g = GridManager.Instance;
-
-        // x = (width-1)/2 icin GridToWorldPosition tam 0 dondurur => merkez = origin
         Vector3 center = Vector3.zero;
-
         if (g.gridParent != null)
             center += g.gridParent.position;
-
         center.x += centerOffset.x;
         center.y += centerOffset.y;
         center.z = 0f;
-
         return center;
     }
 
-    /// <summary>
-    /// Belirtilen pozisyonda renkli particle burst spawn et.
-    /// </summary>
     public void SpawnBurst(Vector3 worldPos, Color color)
     {
         if (particleBurstPrefab == null) return;
@@ -84,9 +78,6 @@ public class MatchVFXManager : MonoBehaviour
         Destroy(obj, 2f);
     }
 
-    /// <summary>
-    /// Belirtilen pozisyonda +X yazisi yukari ucar.
-    /// </summary>
     public void SpawnScorePopup(Vector3 worldPos, int score, Color color)
     {
         if (scorePopupPrefab == null) return;
@@ -95,9 +86,6 @@ public class MatchVFXManager : MonoBehaviour
         if (popup != null) popup.Show(score, color);
     }
 
-    /// <summary>
-    /// Yumusak isik patlamasi — hizlica buyuyup soner. Runtime'da olusturulur, prefab gerekmez.
-    /// </summary>
     private void SpawnFlash(Vector3 worldPos, Color color)
     {
         if (flashSprite == null) return;
@@ -109,11 +97,9 @@ public class MatchVFXManager : MonoBehaviour
         sr.sprite = flashSprite;
         sr.sortingOrder = flashSortingOrder;
 
-        // Sprite'i hedef boyuta normalize et
         float spriteSize = Mathf.Max(flashSprite.bounds.size.x, flashSprite.bounds.size.y);
         float targetScale = spriteSize > 0f ? flashMaxSize / spriteSize : 1f;
 
-        // Baslangic: kucuk ve saydam
         obj.transform.localScale = Vector3.one * (targetScale * 0.3f);
         sr.color = new Color(color.r, color.g, color.b, 0f);
 
@@ -121,20 +107,14 @@ public class MatchVFXManager : MonoBehaviour
         float fadeOut = Mathf.Max(0.1f, flashDuration - fadeIn - flashHoldTime);
 
         Sequence seq = DOTween.Sequence();
-        // Hizli parla + buyu
         seq.Append(sr.DOFade(flashPeakAlpha, fadeIn));
         seq.Join(obj.transform.DOScale(targetScale, fadeIn * 1.6f).SetEase(Ease.OutQuad));
-        // Parlak halde bekle (yazi okunsun)
         seq.AppendInterval(flashHoldTime);
-        // Yumusak son
         seq.Append(sr.DOFade(0f, fadeOut).SetEase(Ease.InQuad));
         seq.Join(obj.transform.DOScale(targetScale * 1.2f, fadeOut).SetEase(Ease.OutQuad));
         seq.OnComplete(() => Destroy(obj));
     }
 
-    /// <summary>
-    /// Yazinin arkasinda dagilmis particle burst'ler.
-    /// </summary>
     private void SpawnBurstCluster(Vector3 center, Color color)
     {
         if (particleBurstPrefab == null) return;
@@ -145,16 +125,12 @@ public class MatchVFXManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Serbest metin feedback'i — arkasinda hem flash hem particle.
-    /// </summary>
     private void SpawnFeedbackText(string message, Color color)
     {
         if (scorePopupPrefab == null || string.IsNullOrEmpty(message)) return;
 
         Vector3 center = GetGridCenter();
 
-        // Hem parlama hem parcaciklar
         SpawnFlash(center, color);
         SpawnBurstCluster(center, color);
 
@@ -163,9 +139,6 @@ public class MatchVFXManager : MonoBehaviour
         if (popup != null) popup.ShowTextAt(message, color, center);
     }
 
-    /// <summary>
-    /// Cascade combo seviyesine gore yazi. comboLevel 1 ise hicbir sey gostermez.
-    /// </summary>
     public void SpawnComboText(int comboLevel)
     {
         string msg = GetComboMessage(comboLevel);
@@ -184,9 +157,6 @@ public class MatchVFXManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Special tile tetiklendiginde yazi (roket, bomba, colorbomb).
-    /// </summary>
     public void SpawnSpecialText(SpecialType type)
     {
         string msg = null;
@@ -212,11 +182,52 @@ public class MatchVFXManager : MonoBehaviour
         if (msg != null) SpawnFeedbackText(msg, color);
     }
 
-    /// <summary>
-    /// Iki special birlestiginde (en guclu combo).
-    /// </summary>
     public void SpawnKrakenText()
     {
         SpawnFeedbackText("Kraken!", krakenColor);
+    }
+
+    public void SpawnGoalCompleteText()
+    {
+        Vector3 center = GetGridCenter();
+
+        // Arkasında hafif parlama + parçacık
+        SpawnFlash(center, goalCompleteColor);
+        SpawnBurstCluster(center, goalCompleteColor);
+
+        if (goalCompleteBanner != null)
+        {
+            // Görsel banner'ı göster
+            GameObject obj = new GameObject("GoalCompleteBanner");
+            obj.transform.position = center;
+
+            SpriteRenderer sr = obj.AddComponent<SpriteRenderer>();
+            sr.sprite = goalCompleteBanner;
+            sr.sortingOrder = 60;
+
+            // Genişliğe göre ölçekle
+            float nativeWidth = goalCompleteBanner.bounds.size.x;
+            float scale = nativeWidth > 0f ? goalBannerWidth / nativeWidth : 1f;
+
+            obj.transform.localScale = Vector3.zero;
+            Color c = sr.color;
+            sr.color = new Color(c.r, c.g, c.b, 0f);
+
+            Sequence seq = DOTween.Sequence();
+            seq.Append(obj.transform.DOScale(scale, 0.4f).SetEase(Ease.OutBack));
+            seq.Join(sr.DOFade(1f, 0.25f));
+            seq.Append(obj.transform.DOPunchScale(Vector3.one * scale * 0.1f, 0.3f, 6, 0.6f));
+            seq.AppendInterval(1.4f);
+            seq.Append(sr.DOFade(0f, 0.5f));
+            seq.Join(obj.transform.DOScale(scale * 1.1f, 0.5f).SetEase(Ease.OutQuad));
+            seq.OnComplete(() => Destroy(obj));
+        }
+        else if (scorePopupPrefab != null)
+        {
+            // Sprite atanmamışsa eski yazı sistemine geri düş
+            GameObject obj = Instantiate(scorePopupPrefab, center, Quaternion.identity);
+            ScorePopup popup = obj.GetComponent<ScorePopup>();
+            if (popup != null) popup.ShowBigTitle("GOAL COMPLETE!", goalCompleteColor, center);
+        }
     }
 }

@@ -33,8 +33,10 @@ public class InputManager : MonoBehaviour
 
     private void HandleInput()
     {
+        if (isSwapping) return;
+
         // Grid clear/gravity/refill VEYA swap animasyonu sürerken input alma
-        if (GridManager.Instance.IsBusy || isSwapping) return;
+        if (GridManager.Instance != null && GridManager.Instance.IsBusy) return;
 
         // Level bittiyse de input alma
         if (LevelManager.Instance != null && !LevelManager.Instance.IsLevelActive) return;
@@ -68,6 +70,7 @@ public class InputManager : MonoBehaviour
                 Vector2Int direction = GetSwipeDirection(delta);
                 TrySwap(selectedFish, direction);
 
+                // swap başlatıldı, sürüklemeyi bitir
                 isDragging = false;
                 selectedFish = null;
             }
@@ -90,6 +93,12 @@ public class InputManager : MonoBehaviour
 
     private void TrySwap(Fish fish, Vector2Int direction)
     {
+        if (fish == null) return;
+
+        // Grid meşgulse veya zaten swap sürüyorsa hiç başlatma
+        if (isSwapping) return;
+        if (GridManager.Instance != null && GridManager.Instance.IsBusy) return;
+
         int targetX = fish.gridX + direction.x;
         int targetY = fish.gridY + direction.y;
 
@@ -101,38 +110,43 @@ public class InputManager : MonoBehaviour
 
     private IEnumerator SwapRoutine(Fish a, Fish b)
     {
-        isSwapping = true;
+        // Çifte giriş koruması: zaten meşgulse başlama
+        if (isSwapping) yield break;
+        if (GridManager.Instance != null && GridManager.Instance.IsBusy) yield break;
 
+        // Grid'i HEMEN kilitle — hiçbir input/işlem araya giremesin
+        isSwapping = true;
+        GridManager.Instance.IsBusy = true;
+
+        // Swap animasyonu
         yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b));
 
-        // ─── SPECIAL COMBO ───
-        // İki special swap'lendi → büyük combo
+        // ── İKİ SPECIAL SWAP (büyük combo) ──
         if (a.IsSpecial && b.IsSpecial)
         {
             yield return StartCoroutine(GridManager.Instance.HandleSpecialCombo(a, b));
             LevelManager.Instance.UseMove();
-            isSwapping = false;
+            FinishSwap();
             yield break;
         }
 
-        // ColorBomb + normal balık → o rengin hepsini temizle
+        // ── ColorBomb + normal balık ──
         if (a.specialType == SpecialType.ColorBomb && !b.IsSpecial)
         {
             yield return StartCoroutine(GridManager.Instance.ActivateColorBombOnType(a, b.data.fishType));
             LevelManager.Instance.UseMove();
-            isSwapping = false;
+            FinishSwap();
             yield break;
         }
         if (b.specialType == SpecialType.ColorBomb && !a.IsSpecial)
         {
             yield return StartCoroutine(GridManager.Instance.ActivateColorBombOnType(b, a.data.fishType));
             LevelManager.Instance.UseMove();
-            isSwapping = false;
+            FinishSwap();
             yield break;
         }
 
-        // ─── ROCKET / BOMB + normal balık → match aranmadan aktive et ───
-        // Swap edilenlerden biri Rocket veya Bomb ise, bulunduğu konumda patlat
+        // ── ROCKET / BOMB + normal balık → match aranmadan aktive et ──
         Fish singleSpecial = null;
         if (IsRocketOrBomb(a) && !b.IsSpecial) singleSpecial = a;
         else if (IsRocketOrBomb(b) && !a.IsSpecial) singleSpecial = b;
@@ -141,11 +155,11 @@ public class InputManager : MonoBehaviour
         {
             yield return StartCoroutine(GridManager.Instance.ActivateSpecialAt(singleSpecial));
             LevelManager.Instance.UseMove();
-            isSwapping = false;
+            FinishSwap();
             yield break;
         }
 
-        // ─── NORMAL MATCH ───
+        // ── NORMAL MATCH ──
         bool hasMatch =
             MatchFinder.Instance.HasMatchAt(a.gridX, a.gridY) ||
             MatchFinder.Instance.HasMatchAt(b.gridX, b.gridY);
@@ -162,7 +176,15 @@ public class InputManager : MonoBehaviour
             yield return StartCoroutine(GridManager.Instance.SwapFishAnimated(a, b, 0.2f, false));
         }
 
+        FinishSwap();
+    }
+
+    // Swap bittiğinde HER durumda çağrılır — kilitleri güvenle açar
+    private void FinishSwap()
+    {
         isSwapping = false;
+        if (GridManager.Instance != null)
+            GridManager.Instance.IsBusy = false;
     }
 
     private bool IsRocketOrBomb(Fish f)

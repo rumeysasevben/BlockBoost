@@ -174,23 +174,27 @@ public class LevelManager : MonoBehaviour
     }
 
     private System.Collections.IEnumerator WinSequence()
-    {
-        // Kalan hamleleri patlat (Candy Crush imza anı)
-        int leftover = MovesRemaining;
-        if (leftover > 0 && GridManager.Instance != null)
         {
-            yield return new WaitForSeconds(0.3f);
-            yield return StartCoroutine(GridManager.Instance.ConvertMovesToBonus(leftover));
-            yield return new WaitForSeconds(0.3f);
-        }
+            // Önce "GOAL COMPLETE!" göster, oyuncu hedefi tamamladığını anlasın
+            MatchVFXManager.Instance?.SpawnGoalCompleteText();
+            AudioManager.Instance?.PlayWin();
+            yield return new WaitForSeconds(1.4f);
 
-        // Bonus bittikten sonra gerçek skorla yıldızları hesapla
-        int score = ScoreManager.Instance.CurrentScore;
-        int stars = CalculateStars(score);
-        SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
-        AudioManager.Instance?.PlayWin();
-        OnLevelWon?.Invoke(stars);
-    }
+            // Kalan hamleleri patlat (Candy Crush imza anı)
+            int leftover = MovesRemaining;
+            if (leftover > 0 && GridManager.Instance != null)
+            {
+                yield return new WaitForSeconds(0.2f);
+                yield return StartCoroutine(GridManager.Instance.ConvertMovesToBonus(leftover));
+                yield return new WaitForSeconds(0.3f);
+            }
+
+            // Bonus bittikten sonra gerçek skorla yıldızları hesapla
+            int score = ScoreManager.Instance.CurrentScore;
+            int stars = CalculateStars(score);
+            SaveManager.Instance?.SaveLevelResult(CurrentLevel.levelNumber, stars);
+            OnLevelWon?.Invoke(stars);
+        }
 
     private int CalculateStars(int score)
     {
